@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042f2e" />
+      <stop offset="50%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="sunGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#fde047" />
+    </linearGradient>
+    <linearGradient id="roofGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="waveLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="waveDeep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="palmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3" flood-color="#000" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded circle for icon use -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" stroke="#10b981" stroke-width="4" stroke-opacity="0.3"/>
+
+  <!-- Sun with Rays -->
+  <g transform="translate(300, 160)" filter="url(#glow)">
+    <circle cx="0" cy="0" r="42" fill="url(#sunGrad)" />
+    <!-- Sun Rays -->
+    <path d="M 0 -54 L 0 -64 M 38 -38 L 46 -46 M 54 0 L 64 0 M -38 -38 L -46 -46 M -54 0 L -64 0" stroke="#fde047" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <!-- Cottage / Gazebo Pavilion -->
+  <g transform="translate(230, 140)" filter="url(#glow)">
+    <!-- Roof Tier 1 -->
+    <path d="M 70 30 Q 80 0 110 5 Q 140 0 150 30 L 130 36 L 90 36 Z" fill="url(#roofGrad)" />
+    <!-- Roof Tier 2 (Main Gazebo Roof) -->
+    <path d="M 40 70 Q 110 30 180 70 L 170 85 Q 110 55 50 85 Z" fill="url(#roofGrad)" />
+    <!-- Pillars -->
+    <rect x="62" y="85" width="10" height="40" rx="3" fill="#fbbf24" />
+    <rect x="92" y="85" width="10" height="40" rx="3" fill="#fbbf24" />
+    <rect x="122" y="85" width="10" height="40" rx="3" fill="#fbbf24" />
+    <rect x="152" y="85" width="10" height="40" rx="3" fill="#fbbf24" />
+    <!-- Gazebo Base Deck & Railing -->
+    <rect x="50" y="125" width="120" height="14" rx="4" fill="#d97706" />
+    <rect x="56" y="112" width="108" height="6" rx="2" fill="#fbbf24" />
+  </g>
+
+  <!-- Palm Trees -->
+  <g transform="translate(130, 120)" filter="url(#glow)">
+    <!-- Left Small Palm Trunk -->
+    <path d="M 45 150 Q 30 100 20 60" stroke="#a16207" stroke-width="7" stroke-linecap="round" fill="none" />
+    <!-- Left Small Palm Leaves -->
+    <path d="M 20 60 Q -10 40 -25 65 Q 0 50 20 60" fill="url(#palmGrad)" />
+    <path d="M 20 60 Q 5 25 35 25 Q 20 45 20 60" fill="url(#palmGrad)" />
+    <path d="M 20 60 Q -25 20 -5 10 Q 10 35 20 60" fill="url(#palmGrad)" />
+
+    <!-- Main Tall Palm Trunk -->
+    <path d="M 90 150 Q 80 80 60 10" stroke="#a16207" stroke-width="9" stroke-linecap="round" fill="none" />
+    <!-- Main Palm Leaves -->
+    <path d="M 60 10 Q 10 -25 -25 15 Q 15 -5 60 10" fill="url(#palmGrad)" />
+    <path d="M 60 10 Q 50 -45 90 -45 Q 75 -15 60 10" fill="url(#palmGrad)" />
+    <path d="M 60 10 Q 110 -30 135 10 Q 100 -5 60 10" fill="url(#palmGrad)" />
+    <path d="M 60 10 Q 20 30 -10 50 Q 25 30 60 10" fill="url(#palmGrad)" />
+    <path d="M 60 10 Q 100 25 130 55 Q 95 30 60 10" fill="url(#palmGrad)" />
+  </g>
+
+  <!-- Big Ocean Wave Swirl -->
+  <g filter="url(#glow)">
+    <!-- Back darker wave -->
+    <path d="M 120 310 C 170 230 240 230 280 270 C 330 320 390 310 440 280 C 400 350 320 370 240 360 C 170 350 140 330 120 310 Z" fill="url(#waveDeep)" />
+    <!-- Front cresting wave with curl -->
+    <path d="M 140 320 C 180 250 240 250 270 290 C 290 320 275 340 255 340 C 235 340 230 325 245 315 C 255 310 255 300 245 295 C 220 285 180 300 150 335 Z" fill="#ffffff" opacity="0.9" />
+    <!-- Main vibrant curling wave body -->
+    <path d="M 130 315 C 190 220 280 230 310 290 C 340 350 280 370 220 365 C 160 360 130 335 130 315 Z" fill="url(#waveLight)" />
+    <path d="M 170 330 C 230 270 310 280 360 340 C 410 310 440 290 450 280 C 420 360 330 385 240 380 C 180 375 160 350 170 330 Z" fill="#0284c7" />
+  </g>
+
+  <!-- Brand Typography -->
+  <g text-anchor="middle">
+    <!-- "Casa Gracia's" -->
+    <text x="256" y="420" font-family="'Brush Script MT', 'Segoe Script', 'Great Vibes', cursive, sans-serif" font-size="44" font-weight="bold" fill="#ffffff" letter-spacing="1">
+      Casa Gracia's
+    </text>
+    <!-- "GARDEN RESTAURANT" -->
+    <text x="256" y="450" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="16" font-weight="900" fill="#38bdf8" letter-spacing="5">
+      GARDEN RESTAURANT
+    </text>
+  </g>
+</svg>
