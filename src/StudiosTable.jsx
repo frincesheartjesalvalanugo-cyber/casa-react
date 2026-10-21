@@ -8,7 +8,7 @@ export default function StudiosTable() {
   const [editcheckIn, seteditcheckIn] = useState("");
   const [isModalOpen, setisModalOpen] = useState(false);
 
-  const bookings_url = 'http://localhost:8080/api/bookings';
+  const bookings_url = 'https://backend-api-5v3u.onrender.com/api/bookings';
 
   useEffect(() => {
     fetch(bookings_url)
