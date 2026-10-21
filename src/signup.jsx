@@ -31,11 +31,9 @@ function Signup() {
     let assignedUid = `USR-${Math.floor(100 + Math.random() * 900)}`;
 
     try {
-      // 1. Create in Firebase Auth
       const userCred = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
       assignedUid = userCred.user.uid;
 
-      // 2. Create in Firestore so it is visible in Firebase Console
       await setDoc(doc(db, "users", assignedUid), {
         uid: assignedUid,
         name: cleanEmail.split("@")[0],
@@ -45,10 +43,8 @@ function Signup() {
       });
     } catch (fbErr) {
       console.warn("Firebase Auth/Firestore signup notice:", fbErr.message);
-      // Even if already exists in Firebase Auth or network issue, proceed with local session fallback
     }
 
-    // 3. Save to localStorage for application compatibility
     try {
       const existingUsers = JSON.parse(localStorage.getItem("casa_registered_users") || "[]");
       const userExists = existingUsers.some(

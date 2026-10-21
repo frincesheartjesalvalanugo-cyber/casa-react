@@ -2,8 +2,6 @@ import { useState } from "react";
 import { auth, googleProvider, db } from "./firebase";
 import { 
   signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword 
 } from "firebase/auth";
 import { 
   doc, 
@@ -27,7 +25,6 @@ function Login() {
   const room = params.get("room");
   const roomQuery = room ? `?room=${room}` : "";
 
-  // Helper to scan role from Firestore (Firebase Console) & route accordingly
   const scanRoleAndRedirect = async (userObj, fallbackEmail = "") => {
     const userEmail = (userObj?.email || fallbackEmail || "").trim().toLowerCase();
     const uid = userObj?.uid;
@@ -38,12 +35,10 @@ function Login() {
     setStatusType("info");
 
     try {
-      // 1. Check if designated admin email
       if (userEmail === "admin@casagracias.com") {
         detectedRole = "admin";
       }
 
-      // 2. Check Firestore 'users' collection by UID
       if (uid) {
         const userDocRef = doc(db, "users", uid);
         const userDocSnap = await getDoc(userDocRef);
@@ -57,7 +52,6 @@ function Login() {
             userName = data.name || data.displayName;
           }
         } else {
-          // Check by email query if UID document doesn't exist
           const q = query(collection(db, "users"), where("email", "==", userEmail));
           const qSnap = await getDocs(q);
 
@@ -70,7 +64,6 @@ function Login() {
               userName = data.name || data.displayName;
             }
           } else {
-            // New user: Save to Firestore so it immediately appears in Firebase Console
             await setDoc(userDocRef, {
               uid: uid,
               name: userName,
@@ -82,7 +75,6 @@ function Login() {
           }
         }
       } else if (userEmail) {
-        // Query by email in Firestore
         const q = query(collection(db, "users"), where("email", "==", userEmail));
         const qSnap = await getDocs(q);
         if (!qSnap.empty) {
@@ -102,7 +94,6 @@ function Login() {
       }
     }
 
-    // Save session to localStorage so existing app pages can read user data
     const sessionUser = {
       uid: uid || `USR-${Math.floor(100 + Math.random() * 900)}`,
       name: userName,
@@ -112,7 +103,6 @@ function Login() {
 
     localStorage.setItem("casa_current_user", JSON.stringify(sessionUser));
 
-    // Update registered users list for Admin Dashboard
     try {
       const existingUsers = JSON.parse(localStorage.getItem("casa_registered_users") || "[]");
       const exists = existingUsers.some((u) => u.email?.toLowerCase() === userEmail);
@@ -131,7 +121,6 @@ function Login() {
       console.error("Local user registry update error:", e);
     }
 
-    // Automatically route / pop up the appropriate portal based on scanned role
     if (detectedRole === "admin") {
       localStorage.setItem("casa_admin_logged", "true");
       setStatusType("success");
@@ -148,7 +137,6 @@ function Login() {
     }
   };
 
-  // Google Sign-In handler
   const handleGoogleLogin = async () => {
     setLoading(true);
     setStatusMessage("Signing in with Google...");
@@ -165,76 +153,8 @@ function Login() {
     }
   };
 
-  // Email / Password Form Submit
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   const cleanEmail = email.trim();
-  //   const cleanPassword = password.trim();
-
-  //   if (!cleanEmail || !cleanPassword) {
-  //     setStatusType("danger");
-  //     setStatusMessage("Please enter both email and password.");
-  //     return;
-  //   }
-
-  //   setLoading(true);
-  //   setStatusMessage("Authenticating...");
-  //   setStatusType("info");
-
-  //   // Quick check for default admin credentials
-  //   if (cleanEmail.toLowerCase() === "admin@casagracias.com" && cleanPassword === "admincasagracias2021") {
-  //     await scanRoleAndRedirect({ email: cleanEmail, displayName: "Admin" }, cleanEmail);
-  //     return;
-  //   }
-
-  //   try {
-  //     // Attempt Firebase Authentication sign-in
-  //     const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-  //     await scanRoleAndRedirect(userCredential.user, cleanEmail);
-  //   } catch (authError) {
-  //     console.warn("Firebase Auth sign-in failed, attempting fallback check:", authError.code);
-
-  //     // Check if user was registered locally or in Firestore
-  //     try {
-  //       const existingUsers = JSON.parse(localStorage.getItem("casa_registered_users") || "[]");
-  //       const matched = existingUsers.find(
-  //         (u) => u.email.toLowerCase() === cleanEmail.toLowerCase()
-  //       );
-
-  //       if (matched) {
-  //         await scanRoleAndRedirect(
-  //           { email: cleanEmail, displayName: matched.name },
-  //           cleanEmail
-  //         );
-  //         return;
-  //       }
-
-  //       // If user not found in Auth, offer seamless sign-up/creation in Firebase Auth
-  //       if (authError.code === "auth/user-not-found" || authError.code === "auth/invalid-credential") {
-  //         try {
-  //           const newUserCred = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-  //           await scanRoleAndRedirect(newUserCred.user, cleanEmail);
-  //           return;
-  //         } catch (createErr) {
-  //           console.warn("Auto-signup fallback error:", createErr);
-  //           setStatusType("danger");
-  //           setStatusMessage("Invalid email or password. Please check your credentials.");
-  //           setLoading(false);
-  //           return;
-  //         }
-  //       }
-  //     } catch (fallbackErr) {
-  //       console.error("Fallback check failed:", fallbackErr);
-  //     }
-
-  //     setStatusType("danger");
-  //     setStatusMessage(authError.message || "Authentication failed. Please check your credentials.");
-  //     setLoading(false);
-  //   }
-  // };
    async function handleSubmit(event) {
-        event.preventDefault() //prevent refresh
-        // console.log(fullName);
+        event.preventDefault()
         try {
             await fetch('http://localhost:8080/api/logins', {
                 method: 'POST',
@@ -277,7 +197,6 @@ function Login() {
           <p className="small mb-4" style={{ color: "#7a8a6f" }}>
             Sign in to access your portal
           </p>
-          
           {statusMessage && (
             <div
               className={`alert alert-${statusType} py-2 px-3 small d-flex align-items-center justify-content-center gap-2`}

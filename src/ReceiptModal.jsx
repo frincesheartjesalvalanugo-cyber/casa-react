@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 
 function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBooking }) {
   const [booking, setBooking] = useState(initialBooking);
@@ -9,7 +9,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
 
   if (!isOpen || !booking) return null;
 
-  // Check 24-hour self-cancellation eligibility
   const checkWithin24Hours = () => {
     let createdMs = booking.createdAtMs;
     if (!createdMs && booking.dateCreated) {
@@ -23,7 +22,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
 
   const canSelfCancel = checkWithin24Hours();
 
-  // Financial Calculations
   const pricePerNight =
     booking.pricePerNight ||
     (booking.roomId === "villa" ? 3500 : booking.roomId === "kubo" ? 2200 : 3000);
@@ -94,13 +92,11 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
     }
   };
 
-  // Dashed line helper
   const dashedLine = {
     borderTop: "2px dashed #b0b8c1",
     margin: "12px 0",
   };
 
-  // Monospace receipt style
   const monoStyle = {
     fontFamily: "'Courier New', Courier, monospace",
     fontSize: "14px",
@@ -140,7 +136,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
       <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ maxWidth: "480px" }}>
         <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
 
-          {/* Modal Header - no print */}
           <div
             className="modal-header border-0 text-white p-3 no-print"
             style={{ backgroundColor: "#2f4a3c" }}
@@ -152,7 +147,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
           </div>
 
-          {/* Tabs - no print */}
           <div className="bg-light border-bottom px-3 pt-2 no-print">
             <ul className="nav nav-tabs border-0 gap-1">
               <li className="nav-item">
@@ -182,7 +176,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             </ul>
           </div>
 
-          {/* Toast alerts - no print */}
           {emailSentToast && (
             <div className="alert alert-success d-flex align-items-center justify-content-between m-3 mb-0 shadow-sm no-print small">
               <div>{"\uD83D\uDCE9"} <strong>Email Sent!</strong> Receipt sent to <u>{booking.email}</u>.</div>
@@ -205,10 +198,8 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             </div>
           )}
 
-          {/* Modal Body */}
           <div className="modal-body p-3 bg-light">
 
-            {/* =============== TAB 1: RECEIPT SLIP =============== */}
             {activeTab === "receipt" && (
               <div
                 className="printable-receipt bg-white p-4 rounded-3"
@@ -217,7 +208,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   ...monoStyle,
                 }}
               >
-                {/* ---- HEADER ---- */}
                 <div className="text-center mb-1">
                   <div style={{ fontFamily: "'Georgia', 'Playfair Display', serif", fontSize: "24px", fontWeight: "bold", color: "#2f4a3c" }}>
                     Casa Gracia's
@@ -230,7 +220,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </div>
                 </div>
 
-                {/* ---- STATUS BADGE ---- */}
                 <div className="text-center my-3">
                   <span
                     className="px-3 py-1 rounded-pill fw-bold"
@@ -254,10 +243,8 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </span>
                 </div>
 
-                {/* ---- DASHED SEP ---- */}
                 <div style={dashedLine}></div>
 
-                {/* ---- BOOKING INFO ---- */}
                 <div style={{ padding: "4px 0" }}>
                   <div><strong>BOOKING #:</strong> {booking.id}</div>
                   <div><strong>RECEIPT #:</strong> {receiptNo}</div>
@@ -271,10 +258,8 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   <div><strong>DURATION:</strong> {nights} night(s)</div>
                 </div>
 
-                {/* ---- DASHED SEP ---- */}
                 <div style={dashedLine}></div>
 
-                {/* ---- COST TABLE ---- */}
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid #dee2e6" }}>
@@ -310,16 +295,13 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </tbody>
                 </table>
 
-                {/* ---- DASHED SEP ---- */}
                 <div style={dashedLine}></div>
 
-                {/* ---- SUBTOTAL ---- */}
                 <div className="d-flex justify-content-between" style={{ padding: "2px 0" }}>
                   <span><strong>SUBTOTAL:</strong></span>
                   <span>{formattedSubtotal}</span>
                 </div>
 
-                {/* ---- TOTAL ---- */}
                 <div style={{ borderTop: "2px solid #2c3e50", marginTop: "8px", paddingTop: "8px" }}>
                   <div className="d-flex justify-content-between align-items-center">
                     <span style={{ fontWeight: "bold", fontSize: "16px" }}>TOTAL DUE:</span>
@@ -327,7 +309,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </div>
                 </div>
 
-                {/* ---- CANCEL BUTTON (visible on receipt & print) ---- */}
                 <div className="text-center" style={{ marginTop: "16px" }}>
                   {booking.status === "Cancelled" ? (
                     <span
@@ -357,16 +338,13 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   )}
                 </div>
 
-                {/* ---- POLICY NOTE ---- */}
                 <div style={{ marginTop: "14px", fontSize: "11px", color: "#6c757d", textAlign: "center", lineHeight: "1.5" }}>
                   Self-cancellation is allowed within <strong>24 hours</strong> of booking.<br />
                   After 24 hours, contact Casa Gracia Admin.
                 </div>
 
-                {/* ---- DASHED SEP ---- */}
                 <div style={dashedLine}></div>
 
-                {/* ---- THANK YOU ---- */}
                 <div className="text-center" style={{ color: "#2f4a3c", fontSize: "13px", fontStyle: "italic", lineHeight: "1.6" }}>
                   Maraming Salamat po! We look forward<br />
                   to welcoming you at<br />
@@ -375,10 +353,8 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
               </div>
             )}
 
-            {/* =============== TAB 2: EMAIL CONFIRMATION =============== */}
             {activeTab === "email" && (
               <div className="bg-white rounded-4 shadow-sm border overflow-hidden">
-                {/* Email Client Top Bar */}
                 <div className="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center gap-2">
                     <span className="badge bg-secondary">INBOX</span>
@@ -391,7 +367,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </button>
                 </div>
 
-                {/* Email Metadata */}
                 <div className="p-3 bg-light border-bottom small">
                   <div className="row g-2">
                     <div className="col-auto text-muted">From:</div>
@@ -407,7 +382,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </div>
                 </div>
 
-                {/* Email Body */}
                 <div className="p-4">
                   <div className="text-center pb-3 mb-3 border-bottom">
                     <div className="fs-4 fw-bold" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
@@ -458,7 +432,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             )}
           </div>
 
-          {/* =============== MODAL FOOTER =============== */}
+        
           <div
             className="modal-footer border-0 px-3 py-3 no-print"
             style={{ backgroundColor: "#f0f2f4" }}

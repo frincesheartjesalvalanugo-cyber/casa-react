@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { auth, db } from "./firebase";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { 
   doc, 
   getDoc, 
@@ -8,13 +8,13 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 import Login from "./login.jsx";
+import StudiosTable from "./StudiosTable.jsx";
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Authentication, User Synchronization, & Role Retrieval
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -51,16 +51,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-// Logout Handler
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setRole(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="d-flex align-items-center justify-content-center vh-100" style={{ backgroundColor: "#eef2e6" }}>
@@ -73,34 +63,7 @@ export default function App() {
 
   return (
     <div>
-      {!user ? (
-        <Login />
-      ) : (
-        <div className="d-flex flex-column align-items-center justify-content-center vh-100" style={{ backgroundColor: "#eef2e6" }}>
-          <h2 className="fw-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
-            Welcome, {user.displayName || user.email}!
-          </h2>
-          <p className="small mb-2" style={{ color: "#7a8a6f" }}>{user.email}</p>
-          <span className="badge bg-success mb-4 text-uppercase">Role: {role || "user"}</span>
-          <div className="d-flex gap-2">
-            {role === "admin" ? (
-              <a href="/admin-dashboard.html" className="btn btn-dark rounded-pill px-4 fw-bold">
-                Go to Admin Dashboard
-              </a>
-            ) : (
-              <a href="/reservation.html" className="btn btn-success rounded-pill px-4 fw-bold">
-                Go to Reservations
-              </a>
-            )}
-            <button
-              onClick={handleLogout}
-              className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      )}
+      {!user ? <Login /> : <StudiosTable />}
     </div>
   );
 }

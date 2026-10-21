@@ -16,7 +16,6 @@ function AdminLogin() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    // 1. Check default admin credentials
     if (cleanEmail === "frincesheartlanugo@gmail.com" && cleanPassword === "frincesheart1406") {
       localStorage.setItem("casa_admin_logged", "true");
       localStorage.setItem(
@@ -28,12 +27,10 @@ function AdminLogin() {
     }
 
     setLoading(true);
-    // 2. Check via Firebase Auth & Firestore 'users' role
     try {
       const userCred = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
       const uid = userCred.user.uid;
 
-      // Scan role in Firestore
       let role = "user";
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists() && snap.data().role) {

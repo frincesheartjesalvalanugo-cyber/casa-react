@@ -2,7 +2,7 @@
 
 function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBooking }) {
   const [booking, setBooking] = useState(initialBooking);
-  const [activeTab, setActiveTab] = useState("receipt"); // 'receipt' or 'email'
+  const [activeTab, setActiveTab] = useState("receipt"); 
   const [emailSentToast, setEmailSentToast] = useState(false);
   const [cancelToast, setCancelToast] = useState(false);
   const [contactAdminAlert, setContactAdminAlert] = useState(false);
@@ -15,7 +15,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
     if (!createdMs && booking.dateCreated) {
       createdMs = new Date(booking.dateCreated).getTime();
     }
-    if (!createdMs || isNaN(createdMs)) return true; // Default fallback to true if unknown
+    if (!createdMs || isNaN(createdMs)) return true; 
 
     const elapsedMs = Date.now() - createdMs;
     const elapsedHours = elapsedMs / (1000 * 60 * 60);
@@ -43,7 +43,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
 
   const nights = calculateNights();
   const guestCount = Math.max(1, Number(booking.guests) || 1);
-  const extraGuests = Math.max(0, guestCount - 2); // Base includes 2 guests
+  const extraGuests = Math.max(0, guestCount - 2); 
   const extraGuestRate = booking.roomId === "villa" ? 500 : 300;
   const extraGuestNightlyFee = extraGuests * extraGuestRate;
 
@@ -130,7 +130,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
 
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
-          {/* Modal Header */}
+          
           <div
             className="modal-header border-0 text-white p-4 no-print"
             style={{ backgroundColor: "#2f4a3c" }}
@@ -151,7 +151,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             ></button>
           </div>
 
-          {/* Navigation Tabs */}
+          
           <div className="bg-light border-bottom px-4 pt-3 no-print">
             <ul className="nav nav-tabs border-0 gap-2">
               <li className="nav-item">
@@ -224,7 +224,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             
             {activeTab === "receipt" && (
               <div className="printable-receipt bg-white p-4 p-md-5 rounded-4 shadow-sm border">
-                {/* Header */}
+                
                 <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center border-bottom pb-4 mb-4 gap-3">
                   <div>
                     <h3 className="fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
@@ -244,7 +244,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </div>
                 </div>
 
-                {/* Status Alert Banner */}
+                
                 <div
                   className={`p-3 rounded-3 mb-4 d-flex justify-content-between align-items-center ${
                     booking.status === "Confirmed"
@@ -261,7 +261,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   <span className="small">Ref: {booking.id}</span>
                 </div>
 
-                {/* Guest & Stay Details Grid */}
+                
                 <div className="row g-4 mb-4">
                   <div className="col-md-6">
                     <div className="p-3 rounded-3 bg-light border h-100">
@@ -282,7 +282,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </div>
                 </div>
 
-                {/* Itemized Cost Breakdown Table (Dynamic on Person & Days) */}
+                
                 <div className="table-responsive mb-4">
                   <table className="table table-bordered align-middle">
                     <thead className="table-light">
@@ -336,7 +336,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </table>
                 </div>
 
-                {/* Notice & Policy */}
+                
                 <div className="p-3 bg-light rounded-3 border mb-2 small text-muted">
                   <div className="fw-bold text-dark mb-1">ðŸ“Œ Cancellation & Check-in Policy:</div>
                   <ul className="mb-0 ps-3">
@@ -348,10 +348,10 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
               </div>
             )}
 
-            {/* TAB 2: EMAIL CONFIRMATION SIMULATION */}
+            
             {activeTab === "email" && (
               <div className="bg-white rounded-4 shadow-sm border overflow-hidden">
-                {/* Email Client Top Bar */}
+                
                 <div className="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center gap-2">
                     <span className="badge bg-secondary">INBOX</span>
@@ -367,7 +367,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </button>
                 </div>
 
-                {/* Email Metadata */}
+                
                 <div className="p-3 bg-light border-bottom small">
                   <div className="row g-2">
                     <div className="col-auto text-muted">From:</div>
@@ -383,7 +383,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   </div>
                 </div>
 
-                {/* Email Main Body */}
+                
                 <div className="p-4 p-md-5">
                   <div className="text-center pb-4 mb-4 border-bottom">
                     <div className="display-6 fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
@@ -401,7 +401,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                       : "Thank you for choosing Casa Gracia's Hotel! We are pleased to confirm that we have received your reservation request. Below are your booking breakdown details and official receipt."}
                   </p>
 
-                  {/* Summary Card inside Email */}
+                  
                   <div className="card border-0 bg-light rounded-4 p-4 mb-4">
                     <h5 className="fw-bold mb-3" style={{ color: "#2f4a3c" }}>Booking Cost & Receipt Summary</h5>
                     <div className="row g-3 small">
@@ -461,7 +461,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
             )}
           </div>
 
-          {/* Modal Footer */}
+          
           <div className="modal-footer border-0 bg-white px-4 py-3 justify-content-between no-print">
             <div>
               {booking.status === "Cancelled" ? (

@@ -1,4 +1,3 @@
-// Casa Gracia's Hotel PWA Service Worker
 const CACHE_NAME = 'casa-gracia-hotel-v1.0.0';
 
 const PRECACHE_ASSETS = [
@@ -22,7 +21,6 @@ const PRECACHE_ASSETS = [
   '/favicon.png'
 ];
 
-// Install Event: cache essential assets
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -34,7 +32,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event: clean up outdated caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -47,12 +44,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event: network first for navigations, stale-while-revalidate for assets
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
 
-  // For HTML page navigation
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -64,7 +59,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)

@@ -17,10 +17,8 @@ function Reservation() {
   const [allBookings, setAllBookings] = useState([]);
   const [lookupToast, setLookupToast] = useState("");
 
-  // Ref para sa buong accommodation selection area
   const categoryContainerRef = useRef(null);
 
-  // Listahan ng 5 Villas at 5 Kubos
   const rooms = [
     { id: "villa-1", name: "Villa 1", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg" },
     { id: "villa-2", name: "Villa 2", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg" },
@@ -35,7 +33,6 @@ function Reservation() {
     { id: "kubo-5", name: "Kubo 5", type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg" },
   ];
 
-  // Categories
   const categories = [
     {
       id: "villa",
@@ -53,7 +50,6 @@ function Reservation() {
     },
   ];
 
-  // Dynamic Status Helper
   const getDynamicStatus = (booking) => {
     if (booking.status === "Cancelled") return "Cancelled";
     if (booking.status === "Pending") return "Pending";
@@ -74,7 +70,6 @@ function Reservation() {
     return booking.status || "Pending";
   };
 
-  // Helper para alamin kung Reserved ang kuwarto
   const isRoomReserved = (roomId) => {
     if (!roomId) return false;
     try {
@@ -146,7 +141,6 @@ function Reservation() {
     }
   };
 
-  // Initial Load with Auto-Select Default Room
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get("room");
@@ -176,7 +170,6 @@ function Reservation() {
     }
   }, []);
 
-  // Click outside listener para sa sub-units view
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -193,7 +186,6 @@ function Reservation() {
     };
   }, []);
 
-  // Kapag nagpalit ng category ang gagamit
   useEffect(() => {
     if (activeCategory) {
       const availableRooms = rooms.filter((r) => r.type === activeCategory);
@@ -237,8 +229,7 @@ function Reservation() {
   const vatIncluded = Math.round(calculatedTotal * 0.12);
 
   async function handleSubmit(event) {
-        event.preventDefault() //prevent refresh
-        // console.log(fullName);
+        event.preventDefault()
         try {
             await fetch('http://localhost:8080/api/bookings', {
                 method: 'POST',
@@ -322,9 +313,7 @@ function Reservation() {
           Step 1: Select Accommodation Category
         </h4>
 
-        {/* CONTAINER PARA SA SELECTION AREA */}
         <div ref={categoryContainerRef}>
-          {/* CATEGORY SELECTION */}
           <div className="row g-4 justify-content-center mb-4">
             {categories.map((cat) => (
               <div className="col-md-5" key={cat.id}>
@@ -366,7 +355,6 @@ function Reservation() {
             ))}
           </div>
 
-          {/* SUB-ROOM UNITS */}
           {activeCategory && (
             <div className="p-4 rounded-4 mb-5 shadow-sm" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
               <h5 className="fw-bold mb-3 text-center" style={{ color: "#2f4a3c" }}>

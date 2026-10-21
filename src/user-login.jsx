@@ -131,7 +131,6 @@ function UserLogin() {
         existingUsers.unshift(newUser);
         localStorage.setItem("casa_registered_users", JSON.stringify(existingUsers));
 
-        // Save to Firestore so it appears in Firebase Console
         try {
           await setDoc(doc(db, "users", googleUser.uid), {
             uid: googleUser.uid,
