@@ -1,7 +1,15 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import ReceiptModal from "./ReceiptModal.jsx";
+import StudiosTable from "./StudiosTable.jsx";
+import { auth, db } from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { isAuthorizedAdmin, getStoredSessionUser } from "./authUtils";
 
 function AdminDashboard() {
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const [activeTab, setActiveTab] = useState("overview");
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -39,6 +47,57 @@ function AdminDashboard() {
   });
   const HISTORY_PREVIEW_COUNT = 5;
 
+  // Verify Admin Authentication before loading dashboard
+  useEffect(() => {
+    let isMounted = true;
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      let authorized = false;
+
+      if (firebaseUser) {
+        let role = "user";
+        try {
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          if (userDoc.exists() && userDoc.data()?.role) {
+            role = userDoc.data().role;
+          }
+        } catch (err) {
+          console.warn("Firestore role check warning:", err);
+        }
+
+        if (isAuthorizedAdmin(firebaseUser.email, role)) {
+          authorized = true;
+        }
+      }
+
+      if (!authorized) {
+        const stored = getStoredSessionUser();
+        const storedAdminLogged = localStorage.getItem("casa_admin_logged") === "true";
+        if (stored && isAuthorizedAdmin(stored.email, stored.role) && storedAdminLogged) {
+          authorized = true;
+        }
+      }
+
+      if (isMounted) {
+        if (authorized) {
+          setIsAdmin(true);
+          setAuthChecking(false);
+        } else {
+          setIsAdmin(false);
+          setAuthChecking(false);
+          setTimeout(() => {
+            window.location.replace("/");
+          }, 1500);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     const savedUsers = localStorage.getItem("casa_registered_users");
     if (savedUsers) {
@@ -73,6 +132,8 @@ function AdminDashboard() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("casa_admin_logged");
+    localStorage.removeItem("casa_current_user");
     window.location.href = "/";
   };
 
@@ -377,6 +438,35 @@ function AdminDashboard() {
     );
   };
 
+  // Auth guard: loading screen & access denial redirect
+  if (authChecking) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center vh-100" style={{ backgroundColor: "#eef2e6" }}>
+        <div className="spinner-border text-success mb-3" role="status" style={{ width: "2.5rem", height: "2.5rem" }}>
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="fw-semibold text-muted small">Verifying admin access...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center vh-100 text-center px-3" style={{ backgroundColor: "#eef2e6" }}>
+        <div className="card shadow-sm p-4 rounded-4" style={{ maxWidth: 380, width: "100%", backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
+          <div className="fs-1 mb-2">🔒</div>
+          <h4 className="fw-bold text-danger mb-2">Access Denied</h4>
+          <p className="text-muted small mb-4">
+            You must be logged in as an authorized admin to view this backend. Redirecting to home...
+          </p>
+          <a href="/" className="btn btn-dark rounded-pill px-4 fw-semibold w-100 py-2">
+            Return to Landing Page
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ backgroundColor: "#f4f7f1", minHeight: "100vh", color: "#2f4a3c" }}>
       <nav className="navbar navbar-expand-lg px-4 shadow-sm" style={{ backgroundColor: "#2f4a3c" }}>
@@ -552,7 +642,22 @@ function AdminDashboard() {
               🗂️ Booking History
             </button>
           </li>
+          <li className="nav-item">
+            <button
+              className={`nav-item nav-link rounded-pill fw-semibold ${activeTab === "liveTable" ? "active text-white" : "text-dark"}`}
+              style={{ backgroundColor: activeTab === "liveTable" ? "#2f4a3c" : "transparent" }}
+              onClick={() => setActiveTab("liveTable")}
+            >
+              ⚡ Live Backend Table
+            </button>
+          </li>
         </ul>
+
+        {activeTab === "liveTable" && (
+          <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white mb-5">
+            <StudiosTable />
+          </div>
+        )}
 
         {activeTab === "overview" && (
           <div className="row g-4">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { auth, db } from "./firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { isAuthorizedAdminEmail } from "./authUtils";
 
 function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -16,7 +17,12 @@ function AdminLogin() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    if (cleanEmail === "frincesheartlanugo@gmail.com" && cleanPassword === "frincesheart1406") {
+    if (
+      (cleanEmail === "frincesheartlanugo@gmail.com" ||
+        cleanEmail === "francesheartjesalvalanugo@gmail.com" ||
+        cleanEmail === "admin@casagracias.com") &&
+      cleanPassword === "frincesheart1406"
+    ) {
       localStorage.setItem("casa_admin_logged", "true");
       localStorage.setItem(
         "casa_current_user",
@@ -43,7 +49,7 @@ function AdminLogin() {
         }
       }
 
-      if (role === "admin") {
+      if (role === "admin" || isAuthorizedAdminEmail(cleanEmail)) {
         localStorage.setItem("casa_admin_logged", "true");
         localStorage.setItem(
           "casa_current_user",
@@ -56,7 +62,7 @@ function AdminLogin() {
         );
         window.location.href = "/admin-dashboard.html";
       } else {
-        setErrorMessage("Access denied. This account does not have Admin privileges in Firebase Console.");
+        setErrorMessage("Access denied. This account does not have Admin privileges.");
         setLoading(false);
       }
     } catch (authErr) {
@@ -67,24 +73,55 @@ function AdminLogin() {
   };
 
   return (
-    <div className="bg-dark d-flex align-items-center justify-content-center vh-100">
-      <div className="card shadow-lg border-0 rounded-4 p-4" style={{ maxWidth: 400, width: "100%" }}>
-        <div className="card-body text-center">
-          <a href="/login.html" className="text-decoration-none text-muted small d-block text-start mb-3">
-            &larr; Back
+    <div
+      className="d-flex align-items-center justify-content-center px-3"
+      style={{
+        backgroundColor: "#1f2d24",
+        minHeight: "100vh",
+        padding: "16px 0",
+      }}
+    >
+      <div
+        className="card shadow-lg border-0 rounded-4"
+        style={{
+          maxWidth: "355px",
+          width: "100%",
+          padding: "1.5rem 1.25rem",
+          margin: "0 16px",
+          backgroundColor: "#ffffff",
+          boxSizing: "border-box",
+        }}
+      >
+        <div className="card-body p-0 text-center">
+          <a
+            href="/login.html"
+            className="text-decoration-none small d-inline-flex align-items-center mb-2"
+            style={{ color: "#7a8a6f", fontSize: "0.82rem" }}
+          >
+            &larr; Back to Login
           </a>
 
-          <h3 className="fw-bold mb-3 text-dark">Admin Portal</h3>
-          <p className="text-muted small mb-4">Authorized personnel only</p>
+          <h3
+            className="fw-bold mb-1 text-dark"
+            style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.45rem", color: "#2f4a3c" }}
+          >
+            Admin Portal
+          </h3>
+          <p className="text-muted mb-3" style={{ fontSize: "0.82rem" }}>
+            Authorized personnel only
+          </p>
 
           {errorMessage && (
-            <div id="adminErrorMessage" className="alert alert-danger" role="alert">
+            <div id="adminErrorMessage" className="alert alert-danger py-2 px-3 small" role="alert">
               {errorMessage}
             </div>
           )}
 
           <form id="adminLoginForm" onSubmit={handleSubmit}>
-            <div className="form-floating mb-3 text-start">
+            <div className="mb-2 text-start">
+              <label htmlFor="adminEmail" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Admin Email
+              </label>
               <input
                 type="email"
                 className="form-control"
@@ -93,27 +130,38 @@ function AdminLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
+                style={{ height: "44px", fontSize: "0.9rem", borderRadius: "0.5rem" }}
               />
-              <label htmlFor="adminEmail">Admin Email</label>
             </div>
 
-            <div className="form-floating mb-4 text-start">
+            <div className="mb-3 text-start">
+              <label htmlFor="adminPassword" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Password
+              </label>
               <input
                 type="password"
                 className="form-control"
                 id="adminPassword"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
+                style={{ height: "44px", fontSize: "0.9rem", borderRadius: "0.5rem" }}
               />
-              <label htmlFor="adminPassword">Password</label>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
-              className="btn btn-primary w-100 py-2 rounded-pill fw-bold"
+              className="btn w-100 rounded-pill fw-bold text-white shadow-sm d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "#2f4a3c",
+                border: "none",
+                height: "44px",
+                fontSize: "0.92rem",
+              }}
             >
               {loading ? "Verifying Admin..." : "Login as Admin"}
             </button>

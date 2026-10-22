@@ -153,24 +153,56 @@ function UserLogin() {
   };
 
   return (
-    <div className="d-flex align-items-center justify-content-center vh-100" style={{ backgroundColor: "#eef2e6" }}>
-      <div className="p-4 rounded-4 shadow-lg" style={{ backgroundColor: "#ffffff", maxWidth: 400, width: "100%", border: "1px solid #d8e0c9" }}>
+    <div
+      className="d-flex align-items-center justify-content-center px-3"
+      style={{
+        backgroundColor: "#eef2e6",
+        minHeight: "100vh",
+        padding: "16px 0",
+      }}
+    >
+      <div
+        className="rounded-4 shadow-lg"
+        style={{
+          backgroundColor: "#ffffff",
+          maxWidth: "355px",
+          width: "100%",
+          padding: "1.5rem 1.25rem",
+          margin: "0 16px",
+          border: "1px solid #d8e0c9",
+          boxSizing: "border-box",
+        }}
+      >
         <div className="text-center">
-          <a href={`/login.html${roomQuery}`} className="text-decoration-none small d-block text-start mb-3" style={{ color: "#7a8a6f" }}>
+          <a
+            href={`/login.html${roomQuery}`}
+            className="text-decoration-none small d-inline-flex align-items-center mb-2"
+            style={{ color: "#7a8a6f", fontSize: "0.82rem" }}
+          >
             &larr; Back
           </a>
 
-          <h3 className="fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>User Login</h3>
-          <p className="small mb-4" style={{ color: "#7a8a6f" }}>Enter registered email to log in</p>
+          <h3
+            className="fw-bold mb-1"
+            style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c", fontSize: "1.45rem" }}
+          >
+            User Login
+          </h3>
+          <p className="text-muted mb-3" style={{ fontSize: "0.82rem" }}>
+            Enter registered email to log in
+          </p>
 
           {errorMessage && (
-            <div id="errorMessage" className="alert alert-danger" role="alert">
+            <div id="errorMessage" className="alert alert-danger py-2 px-3 small" role="alert">
               {errorMessage}
             </div>
           )}
 
           <form id="userLoginForm" onSubmit={handleSubmit}>
-            <div className="form-floating mb-3 text-start">
+            <div className="mb-2 text-start">
+              <label htmlFor="loginEmail" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Email Address
+              </label>
               <input
                 type="email"
                 className="form-control"
@@ -179,45 +211,61 @@ function UserLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
+                style={{ height: "44px", fontSize: "0.9rem", borderRadius: "0.5rem" }}
               />
-              <label htmlFor="loginEmail">Email Address</label>
             </div>
 
-            <div className="form-floating mb-4 text-start">
+            <div className="mb-3 text-start">
+              <label htmlFor="loginPassword" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Password
+              </label>
               <input
                 type="password"
                 className="form-control"
                 id="loginPassword"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
+                style={{ height: "44px", fontSize: "0.9rem", borderRadius: "0.5rem" }}
               />
-              <label htmlFor="loginPassword">Password</label>
             </div>
 
             <button
               type="submit"
               id="loginBtn"
-              className="w-100 py-2 rounded-pill fw-bold"
-              style={{ backgroundColor: "#2f4a3c", color: "#ffffff", border: "none" }}
+              disabled={loading}
+              className="btn w-100 rounded-pill fw-bold text-white shadow-sm d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "#2f4a3c",
+                border: "none",
+                height: "44px",
+                fontSize: "0.92rem",
+              }}
             >
-              Login
+              {loading ? "Logging In..." : "Login"}
             </button>
           </form>
 
-          <div className="d-flex align-items-center my-3">
-            <hr className="flex-grow-1" />
-            <span className="px-2 small" style={{ color: "#7a8a6f" }}>or</span>
-            <hr className="flex-grow-1" />
+          <div className="d-flex align-items-center my-2">
+            <hr className="flex-grow-1 my-0" />
+            <span className="px-2 small text-muted" style={{ fontSize: "0.75rem" }}>or</span>
+            <hr className="flex-grow-1 my-0" />
           </div>
 
           <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-100 py-2 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2 border"
-            style={{ backgroundColor: "#ffffff", color: "#5f6368" }}
+            className="btn w-100 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2 border shadow-sm"
+            style={{
+              backgroundColor: "#ffffff",
+              color: "#5f6368",
+              height: "44px",
+              fontSize: "0.88rem",
+            }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -228,7 +276,7 @@ function UserLogin() {
             Sign in with Google
           </button>
 
-          <p className="mt-3 small" style={{ color: "#7a8a6f" }}>
+          <p className="mt-2 mb-0 small" style={{ color: "#7a8a6f", fontSize: "0.82rem" }}>
             Don't have an account?{" "}
             <a href={`/signup.html${roomQuery}`} className="text-decoration-none fw-bold" style={{ color: "#6b8f5e" }}>
               Sign Up

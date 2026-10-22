@@ -84,24 +84,56 @@ function Signup() {
   };
 
   return (
-    <div className="d-flex align-items-center justify-content-center vh-100" style={{ backgroundColor: "#eef2e6" }}>
-      <div className="p-4 rounded-4 shadow-lg" style={{ backgroundColor: "#ffffff", maxWidth: 400, width: "100%", border: "1px solid #d8e0c9" }}>
+    <div
+      className="d-flex align-items-center justify-content-center px-3"
+      style={{
+        backgroundColor: "#eef2e6",
+        minHeight: "100vh",
+        padding: "16px 0",
+      }}
+    >
+      <div
+        className="rounded-4 shadow-lg"
+        style={{
+          backgroundColor: "#ffffff",
+          maxWidth: "355px",
+          width: "100%",
+          padding: "1.5rem 1.25rem",
+          margin: "0 16px",
+          border: "1px solid #d8e0c9",
+          boxSizing: "border-box",
+        }}
+      >
         <div className="text-center">
-          <a href={`/login.html${roomQuery}`} className="text-decoration-none small d-block text-start mb-3" style={{ color: "#7a8a6f" }}>
-            &larr; Back
+          <a
+            href={`/login.html${roomQuery}`}
+            className="text-decoration-none small d-inline-flex align-items-center mb-2"
+            style={{ color: "#7a8a6f", fontSize: "0.82rem" }}
+          >
+            &larr; Back to Login
           </a>
 
-          <h3 className="fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Create Account</h3>
-          <p className="small mb-4" style={{ color: "#7a8a6f" }}>Sign up to save your account</p>
+          <h3
+            className="fw-bold mb-1"
+            style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c", fontSize: "1.45rem" }}
+          >
+            Create Account
+          </h3>
+          <p className="text-muted mb-3" style={{ fontSize: "0.82rem" }}>
+            Sign up to save your account
+          </p>
 
           {alertMessage && (
-            <div id="alertMessage" className={`alert alert-${alertType}`} role="alert">
+            <div id="alertMessage" className={`alert alert-${alertType} py-2 px-3 small`} role="alert">
               {alertMessage}
             </div>
           )}
 
           <form id="signupForm" onSubmit={handleSubmit}>
-            <div className="form-floating mb-3 text-start">
+            <div className="mb-2 text-start">
+              <label htmlFor="signupEmail" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Email Address
+              </label>
               <input
                 type="email"
                 className="form-control"
@@ -110,35 +142,45 @@ function Signup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
+                style={{ height: "44px", fontSize: "0.9rem", borderRadius: "0.5rem" }}
               />
-              <label htmlFor="signupEmail">Email Address</label>
             </div>
 
-            <div className="form-floating mb-4 text-start">
+            <div className="mb-3 text-start">
+              <label htmlFor="signupPassword" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Password
+              </label>
               <input
                 type="password"
                 className="form-control"
                 id="signupPassword"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
+                style={{ height: "44px", fontSize: "0.9rem", borderRadius: "0.5rem" }}
               />
-              <label htmlFor="signupPassword">Password</label>
             </div>
 
             <button
               type="submit"
               id="signupBtn"
               disabled={loading}
-              className="w-100 py-2 rounded-pill fw-bold"
-              style={{ backgroundColor: "#2f4a3c", color: "#ffffff", border: "none" }}
+              className="btn w-100 rounded-pill fw-bold text-white shadow-sm d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "#2f4a3c",
+                border: "none",
+                height: "44px",
+                fontSize: "0.92rem",
+              }}
             >
               {loading ? "Creating Account..." : "Sign Up"}
             </button>
           </form>
 
-          <p className="mt-3 small" style={{ color: "#7a8a6f" }}>
+          <p className="mt-3 mb-0 small" style={{ color: "#7a8a6f", fontSize: "0.82rem" }}>
             Already have an account?{" "}
             <a href={`/login.html${roomQuery}`} className="text-decoration-none fw-bold" style={{ color: "#6b8f5e" }}>
               Login here

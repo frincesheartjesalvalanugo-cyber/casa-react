@@ -308,7 +308,7 @@ function Reservation() {
         </p>
       </header>
 
-      <div className="container py-5">
+      <div className="container py-4 py-md-5 page-safe-bottom" style={{ paddingBottom: "130px" }}>
         <h4 className="fw-bold mb-4 text-center" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
           Step 1: Select Accommodation Category
         </h4>
@@ -356,11 +356,11 @@ function Reservation() {
           </div>
 
           {activeCategory && (
-            <div className="p-4 rounded-4 mb-5 shadow-sm" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
+            <div className="p-3 p-md-4 rounded-4 mb-5 shadow-sm" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
               <h5 className="fw-bold mb-3 text-center" style={{ color: "#2f4a3c" }}>
                 Select Specific {activeCategory === "villa" ? "Villa Unit" : "Kubo Unit"}
               </h5>
-              <div className="row g-3 justify-content-center">
+              <div className="villa-selection-grid">
                 {rooms
                   .filter((room) => room.type === activeCategory)
                   .map((room) => {
@@ -368,42 +368,77 @@ function Reservation() {
                     const isSelected = selectedRoom?.id === room.id;
 
                     return (
-                      <div className="col-6 col-md-4 col-lg-2.4" style={{ width: "20%" }} key={room.id}>
+                      <div className="villa-card-col" key={room.id}>
                         <div
                           onClick={() => !reserved && setSelectedRoom(room)}
+                          className={`villa-unit-card h-100 ${isSelected ? "selected" : ""}`}
                           style={{
                             cursor: reserved ? "not-allowed" : "pointer",
-                            border: isSelected ? "3px solid #6b8f5e" : "1px solid #d8e0c9",
-                            borderRadius: "0.75rem",
+                            border: isSelected ? "3px solid #6b8f5e" : "1.5px solid #d8e0c9",
+                            borderRadius: "0.85rem",
                             overflow: "hidden",
-                            backgroundColor: reserved ? "#f5f5f5" : "#ffffff",
+                            backgroundColor: reserved ? "#f5f5f5" : isSelected ? "#f4f8f2" : "#ffffff",
                             opacity: reserved ? 0.7 : 1,
                             transition: "all 0.2s ease",
+                            boxShadow: isSelected ? "0 4px 12px rgba(107, 143, 94, 0.25)" : "none",
                           }}
                         >
-                          <div className="position-relative">
+                          <div className="position-relative" style={{ width: "100%", height: "115px", overflow: "hidden" }}>
                             <img
                               src={room.image}
                               alt={room.name}
-                              style={{ width: "100%", height: "110px", objectFit: "cover", filter: reserved ? "grayscale(50%)" : "none" }}
+                              style={{ width: "100%", height: "100%", objectFit: "cover", filter: reserved ? "grayscale(60%)" : "none" }}
                             />
                             <span
-                              className={`badge position-absolute top-0 end-0 m-1 px-2 py-1 rounded-pill ${
+                              className={`badge position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill ${
                                 reserved ? "bg-danger" : "bg-success"
                               }`}
-                              style={{ fontSize: "0.65rem" }}
+                              style={{
+                                fontSize: "0.72rem",
+                                fontWeight: "600",
+                                letterSpacing: "0.3px",
+                                zIndex: 2,
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+                              }}
                             >
                               {reserved ? "Reserved" : "Available"}
                             </span>
                           </div>
-                          <div className="p-2 text-center">
-                            <h6 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>{room.name}</h6>
-                            <small className="text-muted d-block">{room.price}</small>
-                            {isSelected && !reserved && (
-                              <span className="badge bg-success rounded-pill px-2 py-1 mt-1" style={{ fontSize: "0.65rem" }}>
-                                ✓ Selected
-                              </span>
-                            )}
+                          <div className="p-2 p-sm-3 text-center d-flex flex-column justify-content-between flex-grow-1" style={{ wordBreak: "break-word" }}>
+                            <div>
+                              <h6 className="fw-bold mb-1" style={{ color: "#2f4a3c", fontSize: "0.95rem" }}>
+                                {room.name}
+                              </h6>
+                              <div
+                                className="fw-semibold text-muted"
+                                style={{
+                                  fontSize: "0.82rem",
+                                  lineHeight: "1.3",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {room.price}
+                              </div>
+                            </div>
+                            <div className="mt-2" style={{ minHeight: "26px" }}>
+                              {isSelected && !reserved ? (
+                                <span
+                                  className="badge rounded-pill px-2 py-1 d-inline-flex align-items-center justify-content-center"
+                                  style={{
+                                    backgroundColor: "#6b8f5e",
+                                    color: "#ffffff",
+                                    fontSize: "0.72rem",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  ✓ Selected
+                                </span>
+                              ) : (
+                                <span className="small text-muted" style={{ fontSize: "0.72rem" }}>
+                                  {reserved ? "Unavailable" : "Tap to select"}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -574,7 +609,7 @@ function Reservation() {
                         <button
                           type="submit"
                           disabled={!selectedRoom || isRoomReserved(selectedRoom?.id)}
-                          className="btn w-100 py-3 rounded-pill fw-bold text-white shadow"
+                          className="btn w-100 py-3 rounded-pill fw-bold text-white shadow mb-3"
                           style={{ backgroundColor: "#2f4a3c", border: "none" }}
                         >
                           Confirm & Generate Receipt &rarr;

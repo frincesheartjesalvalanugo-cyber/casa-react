@@ -1,1 +1,9 @@
-/*              /index.html             200
+/home                /home.html             200
+/reservation         /reservation.html      200
+/login               /login.html            200
+/admin-dashboard     /admin-dashboard.html  200
+/admin-login         /admin-login.html      200
+/admin               /admin-dashboard.html  200
+/signup              /signup.html           200
+/user-login          /user-login.html       200
+/*                   /index.html            200

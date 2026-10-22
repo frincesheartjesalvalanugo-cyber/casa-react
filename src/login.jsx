@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { auth, googleProvider, db } from "./firebase";
-import { 
-  signInWithPopup, 
-} from "firebase/auth";
+import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { 
   doc, 
   getDoc, 
@@ -13,6 +11,7 @@ import {
   getDocs, 
   serverTimestamp 
 } from "firebase/firestore";
+import { isAuthorizedAdminEmail } from "./authUtils";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -31,11 +30,11 @@ function Login() {
     let detectedRole = "user";
     let userName = userObj?.displayName || userEmail.split("@")[0] || "User";
 
-    setStatusMessage("Scanning role in Firebase Console...");
+    setStatusMessage("Verifying account permissions...");
     setStatusType("info");
 
     try {
-      if (userEmail === "admin@casagracias.com") {
+      if (isAuthorizedAdminEmail(userEmail)) {
         detectedRole = "admin";
       }
 
@@ -89,7 +88,7 @@ function Login() {
       }
     } catch (firestoreErr) {
       console.warn("Firestore scan warning (using fallback check):", firestoreErr);
-      if (userEmail === "admin@casagracias.com") {
+      if (isAuthorizedAdminEmail(userEmail)) {
         detectedRole = "admin";
       }
     }
@@ -124,16 +123,16 @@ function Login() {
     if (detectedRole === "admin") {
       localStorage.setItem("casa_admin_logged", "true");
       setStatusType("success");
-      setStatusMessage("Admin role verified from Firebase! Opening Admin Portal...");
+      setStatusMessage("Admin role verified! Opening Admin Portal...");
       setTimeout(() => {
         window.location.href = "/admin-dashboard.html";
-      }, 700);
+      }, 600);
     } else {
       setStatusType("success");
       setStatusMessage(`Welcome ${userName}! Opening Reservation...`);
       setTimeout(() => {
         window.location.href = `/reservation.html${roomQuery}`;
-      }, 700);
+      }, 600);
     }
   };
 
@@ -153,54 +152,102 @@ function Login() {
     }
   };
 
-   async function handleSubmit(event) {
-        event.preventDefault()
-        try {
-            await fetch('http://localhost:8080/api/logins', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    setEmail: email, 
-                    setPassword: password
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setLoading(true);
+    setStatusMessage("Signing in...");
+    setStatusType("info");
 
-                })
-            })
-        } catch (err) {
-            console.log(err);
-        }
-        
-    } 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // Check direct admin credentials
+    if (
+      (cleanEmail === "frincesheartlanugo@gmail.com" ||
+        cleanEmail === "francesheartjesalvalanugo@gmail.com" ||
+        cleanEmail === "admin@casagracias.com") &&
+      cleanPassword === "frincesheart1406"
+    ) {
+      await scanRoleAndRedirect({ email: cleanEmail, displayName: "Admin" });
+      return;
+    }
+
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+      await scanRoleAndRedirect(userCred.user);
+    } catch (firebaseErr) {
+      console.warn("Firebase Auth attempt failed:", firebaseErr.message);
+
+      // Check registered users in local storage as fallback
+      const localUsers = JSON.parse(localStorage.getItem("casa_registered_users") || "[]");
+      const matchedUser = localUsers.find(
+        (u) => u.email?.toLowerCase() === cleanEmail && (!u.password || u.password === cleanPassword)
+      );
+
+      if (matchedUser) {
+        await scanRoleAndRedirect({
+          email: matchedUser.email,
+          displayName: matchedUser.name,
+          uid: matchedUser.id,
+        });
+      } else {
+        setStatusType("danger");
+        setStatusMessage("Invalid email or password. Please try again.");
+        setLoading(false);
+      }
+    }
+  }
 
   return (
-    <div className="d-flex align-items-center justify-content-center vh-100" style={{ backgroundColor: "#eef2e6" }}>
+    <div
+      className="d-flex align-items-center justify-content-center px-3"
+      style={{
+        backgroundColor: "#eef2e6",
+        minHeight: "100vh",
+        padding: "16px 0",
+      }}
+    >
       <div
-        className="p-4 p-md-5 rounded-4 shadow-lg"
+        className="rounded-4 shadow-lg"
         style={{
           backgroundColor: "#ffffff",
-          maxWidth: 440,
+          maxWidth: "355px",
           width: "100%",
+          padding: "1.5rem 1.25rem",
+          margin: "0 16px",
           border: "1px solid #d8e0c9",
+          boxSizing: "border-box",
         }}
       >
         <div className="text-center">
           <a
-            href="/home.html"
-            className="text-decoration-none small d-inline-flex align-items-center mb-3"
-            style={{ color: "#7a8a6f" }}
+            href="/"
+            className="text-decoration-none small d-inline-flex align-items-center mb-2"
+            style={{ color: "#7a8a6f", fontSize: "0.82rem" }}
           >
             &larr; Back to Home
           </a>
 
-          <h2 className="fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
+          <h3
+            className="fw-bold mb-1"
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              color: "#2f4a3c",
+              fontSize: "1.45rem",
+              lineHeight: "1.2",
+            }}
+          >
             Casa Gracia's
-          </h2>
-          <p className="small mb-4" style={{ color: "#7a8a6f" }}>
+          </h3>
+          <p className="text-muted mb-3" style={{ fontSize: "0.82rem" }}>
             Sign in to access your portal
           </p>
+
           {statusMessage && (
             <div
-              className={`alert alert-${statusType} py-2 px-3 small d-flex align-items-center justify-content-center gap-2`}
+              className={`alert alert-${statusType} py-1 px-2 small mb-2 d-flex align-items-center justify-content-center gap-2`}
               role="alert"
+              style={{ fontSize: "0.78rem" }}
             >
               {loading && <div className="spinner-border spinner-border-sm" role="status" />}
               <span>{statusMessage}</span>
@@ -208,7 +255,10 @@ function Login() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="form-floating mb-3 text-start">
+            <div className="mb-2 text-start">
+              <label htmlFor="loginEmail" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Email Address
+              </label>
               <input
                 type="email"
                 className="form-control"
@@ -218,46 +268,69 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                style={{
+                  height: "44px",
+                  fontSize: "0.9rem",
+                  borderRadius: "0.5rem",
+                  border: "1px solid #c8d4bf",
+                }}
               />
-              <label htmlFor="loginEmail">Email Address</label>
             </div>
 
-            <div className="form-floating mb-3 text-start">
+            <div className="mb-3 text-start">
+              <label htmlFor="loginPassword" className="form-label small fw-semibold mb-1" style={{ color: "#2f4a3c", fontSize: "0.78rem" }}>
+                Password
+              </label>
               <input
                 type="password"
                 className="form-control"
                 id="loginPassword"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                style={{
+                  height: "44px",
+                  fontSize: "0.9rem",
+                  borderRadius: "0.5rem",
+                  border: "1px solid #c8d4bf",
+                }}
               />
-              <label htmlFor="loginPassword">Password</label>
             </div>
 
             <button
               type="submit"
               id="loginBtn"
-              className="btn w-100 py-3 rounded-pill fw-bold text-white shadow-sm"
-              style={{ backgroundColor: "#2f4a3c", border: "none" }}
+              className="btn w-100 rounded-pill fw-bold text-white shadow-sm d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "#2f4a3c",
+                border: "none",
+                height: "44px",
+                fontSize: "0.92rem",
+              }}
               disabled={loading}
             >
-              {loading ? "Scanning & Logging in..." : "Login"}
+              {loading ? "Signing In..." : "Login"}
             </button>
           </form>
 
-          <div className="d-flex align-items-center my-3">
-            <hr className="flex-grow-1" />
-            <span className="px-2 small" style={{ color: "#7a8a6f" }}>or</span>
-            <hr className="flex-grow-1" />
+          <div className="d-flex align-items-center my-2">
+            <hr className="flex-grow-1 my-0" />
+            <span className="px-2 small text-muted" style={{ fontSize: "0.75rem" }}>or</span>
+            <hr className="flex-grow-1 my-0" />
           </div>
 
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="btn w-100 py-2 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2 border shadow-sm"
-            style={{ backgroundColor: "#ffffff", color: "#5f6368" }}
+            className="btn w-100 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2 border shadow-sm"
+            style={{
+              backgroundColor: "#ffffff",
+              color: "#5f6368",
+              height: "44px",
+              fontSize: "0.88rem",
+            }}
             disabled={loading}
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
@@ -269,7 +342,7 @@ function Login() {
             Sign in with Google
           </button>
 
-          <p className="mt-4 mb-0 small" style={{ color: "#7a8a6f" }}>
+          <p className="mt-2 mb-0 small" style={{ color: "#7a8a6f", fontSize: "0.82rem" }}>
             Don't have an account?{" "}
             <a
               href={`/signup.html${roomQuery}`}
