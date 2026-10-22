@@ -1,21 +1,86 @@
 import { useState, useEffect } from "react";
+import { auth, db } from "./firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { getStoredSessionUser, isAuthorizedAdmin } from "./authUtils";
 
 function Home() {
+  const [currentUser, setCurrentUser] = useState(null);
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-    const user = getStoredSessionUser();
-    if (user) {
-      setSession(user);
+    const stored = getStoredSessionUser();
+    if (stored) {
+      setSession(stored);
     }
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        let userRole = "user";
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists() && userDoc.data()?.role) {
+            userRole = userDoc.data().role;
+          }
+        } catch (e) {
+          console.warn("Firestore role check warning:", e);
+        }
+
+        const activeSession = {
+          uid: user.uid,
+          name: user.displayName || user.email?.split("@")[0] || "User",
+          email: user.email,
+          role: userRole === "admin" || isAuthorizedAdmin(user.email, userRole) ? "Admin" : "Guest",
+        };
+        setSession(activeSession);
+      } else {
+        setCurrentUser(null);
+        if (!localStorage.getItem("casa_current_user")) {
+          setSession(null);
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const handleLogout = () => {
+  const isLoggedIn = !!currentUser || !!session;
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn("Logout error:", e);
+    }
     localStorage.removeItem("casa_current_user");
     localStorage.removeItem("casa_admin_logged");
     setSession(null);
+    setCurrentUser(null);
     window.location.reload();
+  };
+
+  const getBookingUrl = (room) => {
+    const roomParam = room ? `room=${room}` : "";
+    if (isLoggedIn) {
+      return `/reservation.html${roomParam ? `?${roomParam}` : ""}`;
+    }
+    const queryParts = ["redirect=reservation"];
+    if (roomParam) queryParts.push(roomParam);
+    return `/login.html?${queryParts.join("&")}`;
+  };
+
+  const handleBookClick = (e, room) => {
+    e.preventDefault();
+    const hasActiveAuth = !!auth.currentUser || !!currentUser || !!session || !!getStoredSessionUser();
+    const roomParam = room ? `room=${room}` : "";
+    if (hasActiveAuth) {
+      window.location.href = `/reservation.html${roomParam ? `?${roomParam}` : ""}`;
+    } else {
+      const queryParts = ["redirect=reservation"];
+      if (roomParam) queryParts.push(roomParam);
+      window.location.href = `/login.html?${queryParts.join("&")}`;
+    }
   };
 
   const isAdmin = session && isAuthorizedAdmin(session, session.role);
@@ -54,7 +119,14 @@ function Home() {
                           <img src="/villa-1.jpg" alt="Villa Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover" }} />
                           <h5 className="fw-bold text-uppercase mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Villa Type Room</h5>
                           <p className="small mb-3" style={{ color: "#7a8a6f" }}>Spacious and air-conditioned rooms designed for family comfort.</p>
-                          <a className="btn rounded-pill px-4 fw-bold text-white" href="/reservation.html?room=villa" style={{ backgroundColor: "#6b8f5e", border: "none" }}>Reserve / View Details</a>
+                          <a
+                            className="btn rounded-pill px-4 fw-bold text-white"
+                            href={getBookingUrl("villa")}
+                            onClick={(e) => handleBookClick(e, "villa")}
+                            style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                          >
+                            Reserve / View Details
+                          </a>
                         </div>
                       </div>
 
@@ -63,7 +135,14 @@ function Home() {
                           <img src="/kubo-1.jpg" alt="Kubo Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover" }} />
                           <h5 className="fw-bold text-uppercase mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Kubo Type Room</h5>
                           <p className="small mb-3" style={{ color: "#7a8a6f" }}>Cozy tropical experience surrounded by natural breeze.</p>
-                          <a className="btn rounded-pill px-4 fw-bold text-white" href="/reservation.html?room=kubo" style={{ backgroundColor: "#6b8f5e", border: "none" }}>Reserve / View Details</a>
+                          <a
+                            className="btn rounded-pill px-4 fw-bold text-white"
+                            href={getBookingUrl("kubo")}
+                            onClick={(e) => handleBookClick(e, "kubo")}
+                            style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                          >
+                            Reserve / View Details
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -75,8 +154,13 @@ function Home() {
                 <a className="nav-link px-3" href="#contact" style={{ color: "#c8d4bf" }}>Contact</a>
               </li>
             </ul>
-            <div className="d-flex align-items-center flex-wrap gap-2 mt-2 mt-lg-0">
-              <a href="/reservation.html" className="btn btn-sm rounded-pill px-3 fw-semibold text-white shadow-sm" style={{ backgroundColor: "#6b8f5e", border: "none" }}>
+            <div className="d-flex align-items-center justify-content-center justify-content-lg-end flex-wrap gap-2 mt-3 mt-lg-0 pb-2 pb-lg-0">
+              <a
+                href={getBookingUrl()}
+                onClick={(e) => handleBookClick(e)}
+                className="btn btn-sm rounded-pill px-3 fw-semibold text-white shadow-sm"
+                style={{ backgroundColor: "#6b8f5e", border: "none" }}
+              >
                 Book Now
               </a>
               {session ? (
@@ -106,7 +190,12 @@ function Home() {
           <h1 className="display-5 display-md-4 fw-bold text-white mb-3" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "1px" }}>Welcome to Casa Gracia's</h1>
           <p className="lead fs-6 fs-md-5 mb-4" style={{ color: "#eef2e6" }}>Experience the perfect blend of local hospitality and tropical elegance.</p>
           <div className="d-flex flex-wrap justify-content-center gap-3">
-            <a className="btn text-white btn-lg rounded-pill px-4 px-md-5 fw-bold shadow" href="/reservation.html" style={{ backgroundColor: "#6b8f5e", border: "none" }}>
+            <a
+              className="btn text-white btn-lg rounded-pill px-4 px-md-5 fw-bold shadow"
+              href={getBookingUrl()}
+              onClick={(e) => handleBookClick(e)}
+              style={{ backgroundColor: "#6b8f5e", border: "none" }}
+            >
               Book Now
             </a>
             <a className="btn btn-outline-light btn-lg rounded-pill px-4 px-md-5 fw-bold" href="#about">
@@ -139,7 +228,14 @@ function Home() {
                 <div className="card-body p-4 text-center d-flex flex-column">
                   <h4 className="card-title fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Villa Type Room</h4>
                   <p className="card-text small mb-4 flex-grow-1" style={{ color: "#7a8a6f" }}>Private, spacious, and air-conditioned accommodation for families.</p>
-                  <a href="/reservation.html?room=villa" className="btn rounded-pill w-100 d-block text-white fw-bold py-2 text-decoration-none" style={{ backgroundColor: "#6b8f5e", border: "none" }}>Book Villa</a>
+                  <a
+                    href={getBookingUrl("villa")}
+                    onClick={(e) => handleBookClick(e, "villa")}
+                    className="btn rounded-pill w-100 d-block text-white fw-bold py-2 text-decoration-none"
+                    style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                  >
+                    Book Villa
+                  </a>
                 </div>
               </div>
             </div>
@@ -148,7 +244,14 @@ function Home() {
                 <div className="card-body p-4 text-center d-flex flex-column">
                   <h4 className="card-title fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Kubo Type Room</h4>
                   <p className="card-text small mb-4 flex-grow-1" style={{ color: "#7a8a6f" }}>Cozy tropical kubo experience perfect for nature lovers.</p>
-                  <a href="/reservation.html?room=kubo" className="btn rounded-pill w-100 d-block text-white fw-bold py-2 text-decoration-none" style={{ backgroundColor: "#6b8f5e", border: "none" }}>Book Kubo</a>
+                  <a
+                    href={getBookingUrl("kubo")}
+                    onClick={(e) => handleBookClick(e, "kubo")}
+                    className="btn rounded-pill w-100 d-block text-white fw-bold py-2 text-decoration-none"
+                    style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                  >
+                    Book Kubo
+                  </a>
                 </div>
               </div>
             </div>

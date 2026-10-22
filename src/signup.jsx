@@ -11,6 +11,7 @@ function Signup() {
   const [loading, setLoading] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
+  const redirectTarget = params.get("redirect");
   const room = params.get("room");
   const roomQuery = room ? `?room=${room}` : "";
 
@@ -76,11 +77,17 @@ function Signup() {
     }
 
     setAlertType("success");
-    setAlertMessage("Account created successfully! Redirecting to reservation...");
-
-    setTimeout(() => {
-      window.location.href = `/reservation.html${roomQuery}`;
-    }, 1000);
+    if (redirectTarget === "reservation") {
+      setAlertMessage("Account created successfully! Redirecting to reservation...");
+      setTimeout(() => {
+        window.location.href = `/reservation.html${roomQuery}`;
+      }, 1000);
+    } else {
+      setAlertMessage("Account created successfully! Opening Home...");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    }
   };
 
   return (
@@ -182,7 +189,7 @@ function Signup() {
 
           <p className="mt-3 mb-0 small" style={{ color: "#7a8a6f", fontSize: "0.82rem" }}>
             Already have an account?{" "}
-            <a href={`/login.html${roomQuery}`} className="text-decoration-none fw-bold" style={{ color: "#6b8f5e" }}>
+            <a href={`/login.html${window.location.search}`} className="text-decoration-none fw-bold" style={{ color: "#6b8f5e" }}>
               Login here
             </a>
           </p>

@@ -21,6 +21,7 @@ function Login() {
   const [statusType, setStatusType] = useState("info");
 
   const params = new URLSearchParams(window.location.search);
+  const redirectTarget = params.get("redirect");
   const room = params.get("room");
   const roomQuery = room ? `?room=${room}` : "";
 
@@ -127,11 +128,17 @@ function Login() {
       setTimeout(() => {
         window.location.href = "/admin-dashboard.html";
       }, 600);
-    } else {
+    } else if (redirectTarget === "reservation") {
       setStatusType("success");
       setStatusMessage(`Welcome ${userName}! Opening Reservation...`);
       setTimeout(() => {
         window.location.href = `/reservation.html${roomQuery}`;
+      }, 600);
+    } else {
+      setStatusType("success");
+      setStatusMessage(`Welcome back, ${userName}! Opening Home...`);
+      setTimeout(() => {
+        window.location.href = "/";
       }, 600);
     }
   };
@@ -345,7 +352,7 @@ function Login() {
           <p className="mt-2 mb-0 small" style={{ color: "#7a8a6f", fontSize: "0.82rem" }}>
             Don't have an account?{" "}
             <a
-              href={`/signup.html${roomQuery}`}
+              href={`/signup.html${window.location.search}`}
               className="text-decoration-none fw-bold"
               style={{ color: "#6b8f5e" }}
             >

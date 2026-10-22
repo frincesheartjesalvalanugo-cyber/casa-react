@@ -19,6 +19,7 @@ function UserLogin() {
   const [loading, setLoading] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
+  const redirectTarget = params.get("redirect");
   const room = params.get("room");
   const roomQuery = room ? `?room=${room}` : "";
 
@@ -61,8 +62,10 @@ function UserLogin() {
     if (role === "admin") {
       localStorage.setItem("casa_admin_logged", "true");
       window.location.href = "/admin-dashboard.html";
-    } else {
+    } else if (redirectTarget === "reservation") {
       window.location.href = `/reservation.html${roomQuery}`;
+    } else {
+      window.location.href = "/";
     }
   };
 
@@ -278,7 +281,7 @@ function UserLogin() {
 
           <p className="mt-2 mb-0 small" style={{ color: "#7a8a6f", fontSize: "0.82rem" }}>
             Don't have an account?{" "}
-            <a href={`/signup.html${roomQuery}`} className="text-decoration-none fw-bold" style={{ color: "#6b8f5e" }}>
+            <a href={`/signup.html${window.location.search}`} className="text-decoration-none fw-bold" style={{ color: "#6b8f5e" }}>
               Sign Up
             </a>
           </p>
