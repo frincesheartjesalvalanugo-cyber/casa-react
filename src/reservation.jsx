@@ -20,22 +20,23 @@ function Reservation() {
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
   const [allBookings, setAllBookings] = useState([]);
+  const [existingBookings, setExistingBookings] = useState([]);
   const [lookupToast, setLookupToast] = useState("");
 
   const categoryContainerRef = useRef(null);
 
   const rooms = [
-    { id: "villa-1", name: "Villa 1", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-2", name: "Villa 2", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-3", name: "Villa 3", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-4", name: "Villa 4", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-5", name: "Villa 5", type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
+    { id: "villa-1", name: "Villa 1", unitNumber: 1, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
+    { id: "villa-2", name: "Villa 2", unitNumber: 2, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
+    { id: "villa-3", name: "Villa 3", unitNumber: 3, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
+    { id: "villa-4", name: "Villa 4", unitNumber: 4, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
+    { id: "villa-5", name: "Villa 5", unitNumber: 5, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
 
-    { id: "kubo-1", name: "Kubo 1", type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-2", name: "Kubo 2", type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-3", name: "Kubo 3", type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-4", name: "Kubo 4", type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-5", name: "Kubo 5", type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
+    { id: "kubo-1", name: "Kubo 1", unitNumber: 1, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
+    { id: "kubo-2", name: "Kubo 2", unitNumber: 2, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
+    { id: "kubo-3", name: "Kubo 3", unitNumber: 3, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
+    { id: "kubo-4", name: "Kubo 4", unitNumber: 4, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
+    { id: "kubo-5", name: "Kubo 5", unitNumber: 5, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
   ];
 
   const categories = [
@@ -77,32 +78,98 @@ function Reservation() {
     return booking.status || "Pending";
   };
 
-  const isRoomReserved = (roomId) => {
-    if (!roomId) return false;
+  const fetchExistingBookings = async () => {
     try {
-      const savedBookings = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
-      return savedBookings.some((b) => {
-        const activeStatus = getDynamicStatus(b);
-        const isMatch = b.roomId === roomId || b.roomUnitId === roomId || b.roomName?.includes(roomId);
-        const isActiveBooking = activeStatus === "Pending" || activeStatus === "Confirmed";
-
-        if (!isMatch || !isActiveBooking) return false;
-
-        if (checkIn && checkOut && b.checkIn && b.checkOut) {
-          const reqStart = new Date(checkIn);
-          const reqEnd = new Date(checkOut);
-          const bStart = new Date(b.checkIn);
-          const bEnd = new Date(b.checkOut);
-
-          return reqStart < bEnd && reqEnd > bStart;
+      const res = await fetch(`${API_URL}/api/bookings`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setExistingBookings(data);
+          return data;
         }
+      }
+    } catch (err) {
+      console.warn("Could not fetch remote bookings:", err);
+    }
+    try {
+      const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
+      setExistingBookings(local);
+      return local;
+    } catch {
+      return [];
+    }
+  };
 
-        return true;
-      });
+  const getAllCombinedBookings = () => {
+    let local = [];
+    try {
+      local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
     } catch (e) {
-      console.error(e);
+      local = [];
+    }
+    const combined = [...existingBookings];
+    for (const b of local) {
+      if (!combined.some((item) => String(item.id) === String(b.id))) {
+        combined.push(b);
+      }
+    }
+    return combined;
+  };
+
+  const isUnitBooked = (unit, checkInDate = checkIn, checkOutDate = checkOut) => {
+    if (!unit) return false;
+    if (!checkInDate || !checkOutDate) return false;
+
+    const newStart = new Date(checkInDate);
+    const newEnd = new Date(checkOutDate);
+    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newEnd <= newStart) {
       return false;
     }
+
+    const all = getAllCombinedBookings();
+
+    return all.some((b) => {
+      if (b.status === "Cancelled") return false;
+
+      const isSameType =
+        b.roomId === unit.type ||
+        (b.roomName && b.roomName.toLowerCase().includes(unit.type));
+      if (!isSameType) return false;
+
+      const matchesUnitNumber =
+        b.unitNumber !== undefined &&
+        b.unitNumber !== null &&
+        Number(b.unitNumber) === Number(unit.unitNumber);
+
+      const matchesUnitId =
+        b.roomUnitId && b.roomUnitId === unit.id;
+
+      const matchesUnitName =
+        b.roomName && (
+          b.roomName === unit.name ||
+          b.roomName.startsWith(`${unit.name} `) ||
+          b.roomName.startsWith(`${unit.name}(`) ||
+          b.roomName.includes(` ${unit.name} `) ||
+          b.roomName.includes(unit.name)
+        );
+
+      const isSameUnit = matchesUnitNumber || matchesUnitId || matchesUnitName;
+      if (!isSameUnit) return false;
+
+      if (!b.checkIn || !b.checkOut) return false;
+      const existStart = new Date(b.checkIn);
+      const existEnd = new Date(b.checkOut);
+      if (isNaN(existStart.getTime()) || isNaN(existEnd.getTime())) return false;
+
+      // Overlap rule: newCheckIn < existingCheckOut AND newCheckOut > existingCheckIn
+      return newStart < existEnd && newEnd > existStart;
+    });
+  };
+
+  const isRoomReserved = (roomId) => {
+    const unit = rooms.find((r) => r.id === roomId);
+    if (!unit) return false;
+    return isUnitBooked(unit);
   };
 
   const getLoggedInUser = () => {
@@ -211,6 +278,40 @@ function Reservation() {
     }
   }, [activeCategory]);
 
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      const start = new Date(checkIn);
+      const end = new Date(checkOut);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+        fetchExistingBookings();
+      }
+    }
+  }, [checkIn, checkOut]);
+
+  useEffect(() => {
+    if (isBookingModalOpen) {
+      const currentType = selectedRoom?.type || activeCategory || "villa";
+      const currentCategoryRooms = rooms.filter((r) => r.type === currentType);
+
+      if (checkIn && checkOut) {
+        const start = new Date(checkIn);
+        const end = new Date(checkOut);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+          if (!selectedRoom || isUnitBooked(selectedRoom, checkIn, checkOut)) {
+            const nextFree = currentCategoryRooms.find((u) => !isUnitBooked(u, checkIn, checkOut));
+            setSelectedRoom(nextFree || null);
+          }
+          return;
+        }
+      }
+
+      if (!selectedRoom) {
+        const firstAvail = currentCategoryRooms.find((u) => !isUnitBooked(u, checkIn, checkOut)) || currentCategoryRooms[0];
+        setSelectedRoom(firstAvail);
+      }
+    }
+  }, [checkIn, checkOut, existingBookings, isBookingModalOpen, activeCategory]);
+
   const roomMaxCapacity = selectedRoom?.maxCapacity || (selectedRoom?.type === "villa" ? 10 : 6);
 
   useEffect(() => {
@@ -223,10 +324,19 @@ function Reservation() {
   }, [selectedRoom]);
 
   const handleOpenBookingModal = (room) => {
-    if (room) {
-      setSelectedRoom(room);
-      setActiveCategory(room.type);
+    fetchExistingBookings();
+    const currentType = room?.type || activeCategory || "villa";
+    setActiveCategory(currentType);
+    const categoryRooms = rooms.filter((r) => r.type === currentType);
+
+    let chosen = null;
+    if (room && !isUnitBooked(room, checkIn, checkOut)) {
+      chosen = room;
+    } else {
+      chosen = categoryRooms.find((r) => !isUnitBooked(r, checkIn, checkOut)) || null;
     }
+
+    setSelectedRoom(chosen);
     setConfirmation("");
     setModalStep("form");
     setIsBookingModalOpen(true);
@@ -245,20 +355,6 @@ function Reservation() {
     }
   };
 
-  const decrementGuests = () => {
-    setGuests((prev) => {
-      const cur = Number(prev) || 1;
-      return Math.max(1, cur - 1);
-    });
-  };
-
-  const incrementGuests = () => {
-    setGuests((prev) => {
-      const cur = Number(prev) || 1;
-      return Math.min(roomMaxCapacity, cur + 1);
-    });
-  };
-
   const handleGuestsChange = (e) => {
     const val = e.target.value;
     if (val === "") {
@@ -267,9 +363,7 @@ function Reservation() {
     }
     const num = parseInt(val, 10);
     if (isNaN(num)) return;
-    if (num < 1) {
-      setGuests(1);
-    } else if (num > roomMaxCapacity) {
+    if (num > roomMaxCapacity) {
       setGuests(roomMaxCapacity);
     } else {
       setGuests(num);
@@ -329,12 +423,12 @@ function Reservation() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!selectedRoom) {
-      setConfirmation("error:Please select a room before confirming your reservation.");
+      setConfirmation("error:Please select a unit number before confirming your reservation.");
       return;
     }
 
-    if (isRoomReserved(selectedRoom.id)) {
-      setConfirmation(`error:${selectedRoom.name} is already reserved for the chosen dates. Please choose another room.`);
+    if (isUnitBooked(selectedRoom, checkIn, checkOut)) {
+      setConfirmation(`error:${selectedRoom.name} is already booked for the chosen dates. Please choose another unit.`);
       return;
     }
 
@@ -392,9 +486,10 @@ function Reservation() {
         body: JSON.stringify({
           fullName: trimmedName,
           email: trimmedEmail,
-          roomName: selectedRoom.name,
+          roomName: `${selectedRoom.name} (${selectedRoom.typeName})`,
           roomId: selectedRoom.type,
           roomUnitId: selectedRoom.id,
+          unitNumber: selectedRoom.unitNumber,
           checkIn: checkIn,
           checkOut: checkOut,
           guests: guestCount,
@@ -419,9 +514,10 @@ function Reservation() {
         receiptNo: savedData?.receiptNo || `RCP-${savedData?.id || Date.now().toString().slice(-6)}`,
         fullName: trimmedName,
         email: trimmedEmail,
-        roomName: selectedRoom.name,
+        roomName: `${selectedRoom.name} (${selectedRoom.typeName})`,
         roomId: selectedRoom.type,
         roomUnitId: selectedRoom.id,
+        unitNumber: selectedRoom.unitNumber,
         checkIn: checkIn,
         checkOut: checkOut,
         guests: guestCount,
@@ -711,7 +807,7 @@ function Reservation() {
                         {selectedRoom?.typeName || "Room Reservation"}
                       </span>
                       <h3 className="fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
-                        Reserve {selectedRoom?.name || "Your Stay"}
+                        Reserve {selectedRoom?.name || (activeCategory === "villa" ? "Villa" : "Kubo")}
                       </h3>
                       <p className="text-muted small mb-0">
                         Enter details below to view instant price breakdown and receive your receipt.
@@ -730,6 +826,67 @@ function Reservation() {
                         {/* Form (Left Column on Laptop, Full Width on Mobile) */}
                         <div className="col-12 col-md-7">
                           <div className="row g-3">
+                            {/* Unit-Number Selector */}
+                            <div className="col-12">
+                              <label className="form-label small fw-semibold d-block mb-2" style={{ color: "#2f4a3c" }}>
+                                {selectedRoom?.type === "villa" || activeCategory === "villa"
+                                  ? "Choose Villa Number"
+                                  : "Choose Kubo Number"}
+                              </label>
+                              <div className="d-flex flex-wrap gap-2">
+                                {rooms
+                                  .filter((r) => r.type === (selectedRoom?.type || activeCategory || "villa"))
+                                  .map((unit) => {
+                                    const isBooked = isUnitBooked(unit, checkIn, checkOut);
+                                    const isSelected = selectedRoom?.id === unit.id;
+                                    return (
+                                      <button
+                                        key={unit.id}
+                                        type="button"
+                                        disabled={isBooked}
+                                        onClick={() => setSelectedRoom(unit)}
+                                        className="btn rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center justify-content-center"
+                                        style={{
+                                          minHeight: "40px",
+                                          backgroundColor: isSelected
+                                            ? "#2f4a3c"
+                                            : isBooked
+                                            ? "#e9ecef"
+                                            : "#ffffff",
+                                          color: isSelected
+                                            ? "#ffffff"
+                                            : isBooked
+                                            ? "#6c757d"
+                                            : "#2f4a3c",
+                                          border: isSelected
+                                            ? "2px solid #2f4a3c"
+                                            : isBooked
+                                            ? "1px solid #ced4da"
+                                            : "1.5px solid #2f4a3c",
+                                          cursor: isBooked ? "not-allowed" : "pointer",
+                                          fontSize: "0.88rem",
+                                          transition: "all 0.15s ease",
+                                        }}
+                                      >
+                                        {unit.name} {isBooked ? "(Booked)" : ""}
+                                      </button>
+                                    );
+                                  })}
+                              </div>
+                              {checkIn &&
+                                checkOut &&
+                                rooms
+                                  .filter((r) => r.type === (selectedRoom?.type || activeCategory || "villa"))
+                                  .every((u) => isUnitBooked(u, checkIn, checkOut)) && (
+                                  <div className="alert alert-warning py-2 px-3 small mt-2 mb-0 d-flex align-items-center gap-2" role="alert">
+                                    <span>⚠️</span>
+                                    <span>
+                                      All {selectedRoom?.type === "villa" || activeCategory === "villa" ? "Villa" : "Kubo"} units are booked for the selected dates. Please choose different dates.
+                                    </span>
+                                  </div>
+                                )}
+                            </div>
+
                             <div className="col-12 col-sm-6">
                               <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
                                 Full Name *
@@ -791,52 +948,18 @@ function Reservation() {
                               <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
                                 Number of Persons Checking In * (Max: {roomMaxCapacity})
                               </label>
-                              <div className="input-group">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                                  style={{
-                                    minHeight: "44px",
-                                    minWidth: "48px",
-                                    fontSize: "1.25rem",
-                                    fontWeight: "bold",
-                                    borderColor: "#ced4da",
-                                  }}
-                                  onClick={decrementGuests}
-                                  disabled={Number(guests) <= 1}
-                                  aria-label="Decrease number of guests"
-                                >
-                                  −
-                                </button>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={roomMaxCapacity}
-                                  step="1"
-                                  className="form-control text-center fw-bold"
-                                  style={{ minHeight: "44px", fontSize: "16px" }}
-                                  value={guests}
-                                  onChange={handleGuestsChange}
-                                  onBlur={handleGuestsBlur}
-                                  required
-                                />
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                                  style={{
-                                    minHeight: "44px",
-                                    minWidth: "48px",
-                                    fontSize: "1.25rem",
-                                    fontWeight: "bold",
-                                    borderColor: "#ced4da",
-                                  }}
-                                  onClick={incrementGuests}
-                                  disabled={Number(guests) >= roomMaxCapacity}
-                                  aria-label="Increase number of guests"
-                                >
-                                  +
-                                </button>
-                              </div>
+                              <input
+                                type="number"
+                                min="1"
+                                max={roomMaxCapacity}
+                                step="1"
+                                className="form-control w-100"
+                                style={{ minHeight: "44px", fontSize: "16px" }}
+                                value={guests}
+                                onChange={handleGuestsChange}
+                                onBlur={handleGuestsBlur}
+                                required
+                              />
                               <small className="text-muted d-block mt-1" style={{ fontSize: "0.8rem" }}>
                                 Base rate includes up to 2 persons. Extra persons: +₱{extraGuestRate}/night each (up to {roomMaxCapacity} guests max).
                               </small>
@@ -858,7 +981,7 @@ function Reservation() {
                                 <span className="badge bg-secondary font-monospace">DYNAMIC</span>
                               </div>
 
-                              {selectedRoom && (
+                              {selectedRoom ? (
                                 <>
                                   <div className="d-flex justify-content-between align-items-center mb-2 small">
                                     <span className="text-muted">Room Selected:</span>
@@ -906,18 +1029,22 @@ function Reservation() {
                                     <span className="fw-bold fs-4 text-success font-monospace">₱{calculatedTotal.toLocaleString()}</span>
                                   </div>
                                 </>
+                              ) : (
+                                <div className="text-center py-4 text-muted small">
+                                  ⚠️ No unit currently available. Please choose different dates.
+                                </div>
                               )}
                             </div>
 
                             <div className="mt-3">
                               <button
                                 type="submit"
-                                disabled={!selectedRoom || isRoomReserved(selectedRoom?.id) || isSubmitting}
+                                disabled={!selectedRoom || isUnitBooked(selectedRoom, checkIn, checkOut) || isSubmitting}
                                 className="btn w-100 py-3 rounded-pill fw-bold text-white shadow mb-2 d-flex align-items-center justify-content-center gap-2"
                                 style={{
-                                  backgroundColor: isSubmitting ? "#6b8f5e" : "#2f4a3c",
+                                  backgroundColor: isSubmitting ? "#6b8f5e" : (!selectedRoom || isUnitBooked(selectedRoom, checkIn, checkOut)) ? "#6c757d" : "#2f4a3c",
                                   border: "none",
-                                  cursor: isSubmitting ? "wait" : "pointer",
+                                  cursor: isSubmitting ? "wait" : (!selectedRoom || isUnitBooked(selectedRoom, checkIn, checkOut)) ? "not-allowed" : "pointer",
                                   minHeight: "48px",
                                 }}
                               >
@@ -956,7 +1083,7 @@ function Reservation() {
                           <span style={{ fontSize: "36px", color: "#198754", lineHeight: 1 }}>✓</span>
                         </div>
                         <h3 className="fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
-                          Booking Successful!
+                          Successfully Booked!
                         </h3>
                         <p className="text-muted small mb-3">
                           Thank you! Your reservation has been recorded. Here is your official receipt summary:

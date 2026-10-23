@@ -349,3 +349,15 @@ h5, .h5 {
 .page-safe-bottom {
   padding-bottom: 120px !important;
 }
+
+/* Ensure browser native number spinner controls are always visible */
+input[type="number"] {
+  -moz-appearance: number-input;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: inner-spin-button !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
