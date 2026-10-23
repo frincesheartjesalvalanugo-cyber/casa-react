@@ -23,8 +23,6 @@ function Reservation() {
   const [existingBookings, setExistingBookings] = useState([]);
   const [lookupToast, setLookupToast] = useState("");
 
-  const categoryContainerRef = useRef(null);
-
   const rooms = [
     { id: "villa-1", name: "Villa 1", unitNumber: 1, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
     { id: "villa-2", name: "Villa 2", unitNumber: 2, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
@@ -242,22 +240,6 @@ function Reservation() {
     } else {
       loadAllBookings();
     }
-  }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        categoryContainerRef.current &&
-        !categoryContainerRef.current.contains(event.target)
-      ) {
-        setActiveCategory(null);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
   }, []);
 
   useEffect(() => {
@@ -622,7 +604,7 @@ function Reservation() {
           Step 1: Select Accommodation Category
         </h4>
 
-        <div ref={categoryContainerRef}>
+        <div>
           <div className="row g-4 justify-content-center mb-4">
             {categories.map((cat) => (
               <div className="col-md-5" key={cat.id}>
@@ -630,17 +612,16 @@ function Reservation() {
                   onClick={() => {
                     setActiveCategory(cat.id);
                     const catRooms = rooms.filter((r) => r.type === cat.id);
-                    const availableDefault = catRooms.find((r) => !isRoomReserved(r.id)) || catRooms[0];
-                    handleOpenBookingModal(availableDefault);
+                    handleOpenBookingModal(catRooms[0]);
                   }}
                   style={{
                     cursor: "pointer",
-                    border: activeCategory === cat.id ? "3px solid #6b8f5e" : "2px solid #d8e0c9",
+                    border: "2px solid #d8e0c9",
                     borderRadius: "1rem",
                     overflow: "hidden",
                     backgroundColor: "#ffffff",
                     transition: "all 0.2s ease",
-                    boxShadow: activeCategory === cat.id ? "0 8px 24px rgba(107, 143, 94, 0.25)" : "none",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
                   }}
                 >
                   <img
@@ -666,99 +647,6 @@ function Reservation() {
               </div>
             ))}
           </div>
-
-          {activeCategory && (
-            <div className="p-3 p-md-4 rounded-4 mb-5 shadow-sm" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
-              <h5 className="fw-bold mb-3 text-center" style={{ color: "#2f4a3c" }}>
-                Select Specific {activeCategory === "villa" ? "Villa Unit" : "Kubo Unit"}
-              </h5>
-              <div className="villa-selection-grid">
-                {rooms
-                  .filter((room) => room.type === activeCategory)
-                  .map((room) => {
-                    const reserved = isRoomReserved(room.id);
-                    const isSelected = selectedRoom?.id === room.id;
-
-                    return (
-                      <div className="villa-card-col" key={room.id}>
-                        <div
-                          onClick={() => !reserved && handleOpenBookingModal(room)}
-                          className={`villa-unit-card h-100 ${isSelected ? "selected" : ""}`}
-                          style={{
-                            cursor: reserved ? "not-allowed" : "pointer",
-                            border: isSelected ? "3px solid #6b8f5e" : "1.5px solid #d8e0c9",
-                            borderRadius: "0.85rem",
-                            overflow: "hidden",
-                            backgroundColor: reserved ? "#f5f5f5" : isSelected ? "#f4f8f2" : "#ffffff",
-                            opacity: reserved ? 0.7 : 1,
-                            transition: "all 0.2s ease",
-                            boxShadow: isSelected ? "0 4px 12px rgba(107, 143, 94, 0.25)" : "none",
-                          }}
-                        >
-                          <div className="position-relative" style={{ width: "100%", height: "115px", overflow: "hidden" }}>
-                            <img
-                              src={room.image}
-                              alt={room.name}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", filter: reserved ? "grayscale(60%)" : "none" }}
-                            />
-                            <span
-                              className={`badge position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill ${
-                                reserved ? "bg-danger" : "bg-success"
-                              }`}
-                              style={{
-                                fontSize: "0.72rem",
-                                fontWeight: "600",
-                                letterSpacing: "0.3px",
-                                zIndex: 2,
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-                              }}
-                            >
-                              {reserved ? "Reserved" : "Available"}
-                            </span>
-                          </div>
-                          <div className="p-2 p-sm-3 text-center d-flex flex-column justify-content-between flex-grow-1" style={{ wordBreak: "break-word" }}>
-                            <div>
-                              <h6 className="fw-bold mb-1" style={{ color: "#2f4a3c", fontSize: "0.95rem" }}>
-                                {room.name}
-                              </h6>
-                              <div
-                                className="fw-semibold text-muted"
-                                style={{
-                                  fontSize: "0.82rem",
-                                  lineHeight: "1.3",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {room.price}
-                              </div>
-                            </div>
-                            <div className="mt-2" style={{ minHeight: "26px" }}>
-                              {reserved ? (
-                                <span className="small text-muted" style={{ fontSize: "0.72rem" }}>
-                                  Unavailable
-                                </span>
-                              ) : (
-                                <span
-                                  className="badge rounded-pill px-2 py-1 d-inline-flex align-items-center justify-content-center"
-                                  style={{
-                                    backgroundColor: isSelected ? "#6b8f5e" : "#2f4a3c",
-                                    color: "#ffffff",
-                                    fontSize: "0.72rem",
-                                    fontWeight: "600",
-                                  }}
-                                >
-                                  {isSelected ? "✓ Selected (Tap to Book)" : "Tap to Book"}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Centered Modal Card for Booking Details & Receipt */}
