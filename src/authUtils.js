@@ -2,6 +2,8 @@
  * Centralized Authentication & Admin Authorization Utilities
  * Casa Gracia's Hotel & Resort
  */
+import { auth, googleProvider } from "./firebase";
+import { signInWithPopup } from "firebase/auth";
 
 export const ADMIN_EMAILS = [
   "frincesheartlanugo@gmail.com",
@@ -10,6 +12,21 @@ export const ADMIN_EMAILS = [
 ];
 
 export const ADMIN_AUTH_SECRET = "casa-admin-secret-2026";
+
+/**
+ * Detect embedded in-app browsers where Google sign-in OAuth is blocked
+ */
+export function isInAppBrowser() {
+  if (typeof navigator === "undefined" || !navigator.userAgent) return false;
+  return /FBAN|FBAV|FB_IAB|Messenger|Instagram|TikTok|Line/i.test(navigator.userAgent);
+}
+
+/**
+ * Shared Google Sign-In using popup
+ */
+export async function signInWithGoogle() {
+  return await signInWithPopup(auth, googleProvider);
+}
 
 /**
  * Checks if a given email is in the authorized admin list

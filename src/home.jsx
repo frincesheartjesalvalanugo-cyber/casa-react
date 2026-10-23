@@ -114,32 +114,32 @@ function Home() {
                 <div className="dropdown-menu w-100 shadow-lg border-0 p-3 p-md-4 mt-0 rounded-0 rounded-bottom" aria-labelledby="roomsDropdown" style={{ backgroundColor: "#ffffff", borderTop: "3px solid #6b8f5e" }}>
                   <div className="container">
                     <div className="row g-4 text-center justify-content-center">
-                      <div className="col-md-6 border-end" style={{ borderColor: "#d8e0c9" }}>
+                      <div className="col-12 col-md-6 border-0 border-md-end" style={{ borderColor: "#d8e0c9" }}>
                         <div className="p-2 p-md-3">
-                          <img src="/villa-1.jpg" alt="Villa Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover" }} />
+                          <img src="/villa-1.jpg" alt="Villa Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover", aspectRatio: "16/9" }} />
                           <h5 className="fw-bold text-uppercase mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Villa Type Room</h5>
                           <p className="small mb-3" style={{ color: "#7a8a6f" }}>Spacious and air-conditioned rooms designed for family comfort.</p>
                           <a
-                            className="btn rounded-pill px-4 fw-bold text-white"
+                            className="btn rounded-pill px-4 fw-bold text-white d-inline-flex align-items-center justify-content-center"
                             href={getBookingUrl("villa")}
                             onClick={(e) => handleBookClick(e, "villa")}
-                            style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                            style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
                           >
                             Reserve / View Details
                           </a>
                         </div>
                       </div>
 
-                      <div className="col-md-6">
+                      <div className="col-12 col-md-6">
                         <div className="p-2 p-md-3">
-                          <img src="/kubo-1.jpg" alt="Kubo Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover" }} />
+                          <img src="/kubo-1.jpg" alt="Kubo Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover", aspectRatio: "16/9" }} />
                           <h5 className="fw-bold text-uppercase mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Kubo Type Room</h5>
                           <p className="small mb-3" style={{ color: "#7a8a6f" }}>Cozy tropical experience surrounded by natural breeze.</p>
                           <a
-                            className="btn rounded-pill px-4 fw-bold text-white"
+                            className="btn rounded-pill px-4 fw-bold text-white d-inline-flex align-items-center justify-content-center"
                             href={getBookingUrl("kubo")}
                             onClick={(e) => handleBookClick(e, "kubo")}
-                            style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                            style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
                           >
                             Reserve / View Details
                           </a>
@@ -158,24 +158,24 @@ function Home() {
               <a
                 href={getBookingUrl()}
                 onClick={(e) => handleBookClick(e)}
-                className="btn btn-sm rounded-pill px-3 fw-semibold text-white shadow-sm"
-                style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                className="btn rounded-pill px-3 fw-semibold text-white shadow-sm d-inline-flex align-items-center justify-content-center"
+                style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
               >
                 Book Now
               </a>
               {session ? (
                 <>
                   {isAdmin && (
-                    <a href="/admin-dashboard.html" className="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold">
+                    <a href="/admin-dashboard.html" className="btn btn-outline-warning rounded-pill px-3 fw-semibold d-inline-flex align-items-center justify-content-center" style={{ minHeight: "44px" }}>
                       Admin Portal
                     </a>
                   )}
-                  <button onClick={handleLogout} className="btn btn-outline-light btn-sm rounded-pill px-3">
+                  <button onClick={handleLogout} className="btn btn-outline-light rounded-pill px-3 d-inline-flex align-items-center justify-content-center" style={{ minHeight: "44px" }}>
                     Logout
                   </button>
                 </>
               ) : (
-                <a href="/login.html" className="btn btn-outline-light btn-sm rounded-pill px-4">
+                <a href="/login.html" className="btn btn-outline-light rounded-pill px-4 d-inline-flex align-items-center justify-content-center" style={{ minHeight: "44px" }}>
                   Login
                 </a>
               )}
@@ -223,32 +223,34 @@ function Home() {
             </div>
           </div>
           <div className="row g-4 justify-content-center mb-5">
-            <div className="col-md-6 col-lg-5">
-              <div className="card shadow-lg border-0 rounded-4 h-100" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
+            <div className="col-12 col-md-6 col-lg-5">
+              <div className="card shadow-lg border-0 rounded-4 h-100 overflow-hidden" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
+                <img src="/villa-1.jpg" alt="Villa Type Room" className="w-100" style={{ height: "200px", objectFit: "cover", aspectRatio: "16/9" }} />
                 <div className="card-body p-4 text-center d-flex flex-column">
                   <h4 className="card-title fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Villa Type Room</h4>
                   <p className="card-text small mb-4 flex-grow-1" style={{ color: "#7a8a6f" }}>Private, spacious, and air-conditioned accommodation for families.</p>
                   <a
                     href={getBookingUrl("villa")}
                     onClick={(e) => handleBookClick(e, "villa")}
-                    className="btn rounded-pill w-100 d-block text-white fw-bold py-2 text-decoration-none"
-                    style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                    className="btn rounded-pill w-100 d-inline-flex align-items-center justify-content-center text-white fw-bold py-2 text-decoration-none"
+                    style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
                   >
                     Book Villa
                   </a>
                 </div>
               </div>
             </div>
-            <div className="col-md-6 col-lg-5">
-              <div className="card shadow-lg border-0 rounded-4 h-100" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
+            <div className="col-12 col-md-6 col-lg-5">
+              <div className="card shadow-lg border-0 rounded-4 h-100 overflow-hidden" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
+                <img src="/kubo-1.jpg" alt="Kubo Type Room" className="w-100" style={{ height: "200px", objectFit: "cover", aspectRatio: "16/9" }} />
                 <div className="card-body p-4 text-center d-flex flex-column">
                   <h4 className="card-title fw-bold mb-3" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Kubo Type Room</h4>
                   <p className="card-text small mb-4 flex-grow-1" style={{ color: "#7a8a6f" }}>Cozy tropical kubo experience perfect for nature lovers.</p>
                   <a
                     href={getBookingUrl("kubo")}
                     onClick={(e) => handleBookClick(e, "kubo")}
-                    className="btn rounded-pill w-100 d-block text-white fw-bold py-2 text-decoration-none"
-                    style={{ backgroundColor: "#6b8f5e", border: "none" }}
+                    className="btn rounded-pill w-100 d-inline-flex align-items-center justify-content-center text-white fw-bold py-2 text-decoration-none"
+                    style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
                   >
                     Book Kubo
                   </a>
@@ -318,7 +320,7 @@ function Home() {
                 <div className="fs-2 mb-3" style={{ color: "#6b8f5e" }}>📞</div>
                 <h5 className="fw-bold mb-2" style={{ color: "#2f4a3c", fontFamily: "'Playfair Display', serif" }}>Phone</h5>
                 <p className="small mb-3" style={{ color: "#7a8a6f" }}>Direct call & SMS inquiry</p>
-                <a href="tel:09563002047" className="btn rounded-pill px-4 py-2 fw-bold text-white text-decoration-none" style={{ backgroundColor: "#2f4a3c", border: "none" }}>
+                <a href="tel:09563002047" className="btn rounded-pill px-4 py-2 fw-bold text-white text-decoration-none d-inline-flex align-items-center justify-content-center" style={{ backgroundColor: "#2f4a3c", border: "none", minHeight: "44px" }}>
                   09563002047
                 </a>
               </div>
@@ -329,7 +331,7 @@ function Home() {
                 <div className="fs-2 mb-3" style={{ color: "#6b8f5e" }}>✉️</div>
                 <h5 className="fw-bold mb-2" style={{ color: "#2f4a3c", fontFamily: "'Playfair Display', serif" }}>Email</h5>
                 <p className="small mb-3" style={{ color: "#7a8a6f" }}>Send your inquiries or booking details</p>
-                <a href="mailto:casagraciashotel@gmail.com" className="btn rounded-pill px-4 py-2 fw-bold text-white text-decoration-none" style={{ backgroundColor: "#2f4a3c", border: "none" }}>
+                <a href="mailto:casagraciashotel@gmail.com" className="btn rounded-pill px-4 py-2 fw-bold text-white text-decoration-none d-inline-flex align-items-center justify-content-center" style={{ backgroundColor: "#2f4a3c", border: "none", minHeight: "44px" }}>
                   casagraciashotel@gmail.com
                 </a>
               </div>
@@ -340,7 +342,7 @@ function Home() {
                 <div className="fs-2 mb-3" style={{ color: "#6b8f5e" }}>💬</div>
                 <h5 className="fw-bold mb-2" style={{ color: "#2f4a3c", fontFamily: "'Playfair Display', serif" }}>Facebook Messenger</h5>
                 <p className="small mb-3" style={{ color: "#7a8a6f" }}>Chat with us on Messenger</p>
-                <a href="https://m.me" target="_blank" rel="noopener noreferrer" className="btn rounded-pill px-4 py-2 fw-bold text-white text-decoration-none" style={{ backgroundColor: "#2f4a3c", border: "none" }}>
+                <a href="https://m.me" target="_blank" rel="noopener noreferrer" className="btn rounded-pill px-4 py-2 fw-bold text-white text-decoration-none d-inline-flex align-items-center justify-content-center" style={{ backgroundColor: "#2f4a3c", border: "none", minHeight: "44px" }}>
                   Casa Gracia's Hotel
                 </a>
               </div>

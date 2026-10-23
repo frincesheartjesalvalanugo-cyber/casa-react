@@ -103,10 +103,10 @@ function Signup() {
         className="rounded-4 shadow-lg"
         style={{
           backgroundColor: "#ffffff",
-          maxWidth: "355px",
+          maxWidth: "380px",
           width: "100%",
           padding: "1.5rem 1.25rem",
-          margin: "0 16px",
+          margin: "0 auto",
           border: "1px solid #d8e0c9",
           boxSizing: "border-box",
         }}

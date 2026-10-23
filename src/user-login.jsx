@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { auth, googleProvider, db } from "./firebase";
-import { signInWithPopup } from "firebase/auth";
+import { auth, db } from "./firebase";
+import { signInWithGoogle, isInAppBrowser } from "./authUtils";
 import { 
   doc, 
   getDoc, 
@@ -17,6 +17,7 @@ function UserLogin() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const inAppBrowser = isInAppBrowser();
 
   const params = new URLSearchParams(window.location.search);
   const redirectTarget = params.get("redirect");
@@ -114,7 +115,7 @@ function UserLogin() {
     setErrorMessage("");
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithGoogle();
       const googleUser = result.user;
 
       const existingUsers = JSON.parse(localStorage.getItem("casa_registered_users") || "[]");
@@ -168,10 +169,10 @@ function UserLogin() {
         className="rounded-4 shadow-lg"
         style={{
           backgroundColor: "#ffffff",
-          maxWidth: "355px",
+          maxWidth: "380px",
           width: "100%",
           padding: "1.5rem 1.25rem",
-          margin: "0 16px",
+          margin: "0 auto",
           border: "1px solid #d8e0c9",
           boxSizing: "border-box",
         }}
@@ -258,10 +259,16 @@ function UserLogin() {
             <hr className="flex-grow-1 my-0" />
           </div>
 
+          {inAppBrowser && (
+            <div className="alert alert-warning py-2 px-3 small text-start mb-2" style={{ fontSize: "0.78rem" }}>
+              Google sign-in doesn't work inside this app's browser. Tap the ... menu and choose 'Open in Chrome/Browser', or log in with your email and password.
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={loading}
+            disabled={loading || inAppBrowser}
             className="btn w-100 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2 border shadow-sm"
             style={{
               backgroundColor: "#ffffff",

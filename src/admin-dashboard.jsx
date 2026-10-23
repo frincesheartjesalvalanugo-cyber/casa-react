@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReceiptModal from "./ReceiptModal.jsx";
 import StudiosTable from "./StudiosTable.jsx";
 import { auth, db } from "./firebase";
@@ -46,6 +46,16 @@ function AdminDashboard() {
     completed: false,
   });
   const HISTORY_PREVIEW_COUNT = 5;
+  const tabListRef = useRef(null);
+
+  useEffect(() => {
+    if (tabListRef.current) {
+      const activeEl = tabListRef.current.querySelector(".active");
+      if (activeEl && typeof activeEl.scrollIntoView === "function") {
+        activeEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  }, [activeTab]);
 
   // Verify Admin Authentication before loading dashboard
   useEffect(() => {
@@ -370,10 +380,9 @@ function AdminDashboard() {
             ) : (
               <>
                 <div className="table-responsive">
-                  <table className="table table-hover align-middle">
+                  <table className="table table-hover align-middle table-responsive-cards mb-0">
                     <thead style={{ backgroundColor: headerBg }}>
                       <tr>
-                        <th>Booking ID</th>
                         <th>Guest Details</th>
                         <th>Room Type</th>
                         <th>Check In / Out</th>
@@ -385,32 +394,34 @@ function AdminDashboard() {
                     <tbody>
                       {visibleList.map((b) => (
                         <tr key={b.id}>
-                          <td><span className="badge bg-dark font-monospace px-2 py-1">{b.id}</span></td>
-                          <td>
-                            <div className="fw-bold">{b.fullName}</div>
+                          <td className="card-header-cell">
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>{b.fullName}</span>
+                              <span className="badge bg-dark font-monospace px-2 py-1">{b.id}</span>
+                            </div>
                             <div className="small text-muted">{b.email}</div>
                           </td>
-                          <td>
+                          <td data-label="Room">
                             <span className={`badge ${b.roomId === "villa" ? "bg-success" : "bg-warning text-dark"}`}>
                               {b.roomName}
                             </span>
                           </td>
-                          <td className="small">
-                            <div><strong>In:</strong> {b.checkIn}</div>
-                            <div><strong>Out:</strong> {b.checkOut}</div>
+                          <td data-label="Dates" className="small">
+                            <div><strong>In:</strong> {b.checkIn} | <strong>Out:</strong> {b.checkOut}</div>
                           </td>
-                          <td className="fw-bold text-success">{b.totalPrice}</td>
+                          <td data-label="Total" className="fw-bold text-success">{b.totalPrice}</td>
                           {showStatusColumn && (
-                            <td>
+                            <td data-label="Status">
                               <span className={`badge rounded-pill px-3 py-2 ${b.status === "Confirmed" ? "bg-success" : "bg-warning text-dark"}`}>
                                 {b.status}
                               </span>
                             </td>
                           )}
-                          <td className="text-center">
+                          <td className="card-action-cell text-center">
                             <button
                               onClick={() => handleViewReceipt(b)}
-                              className="btn btn-sm btn-outline-dark rounded-pill px-3"
+                              className="btn btn-outline-dark rounded-pill px-3 w-100"
+                              style={{ minHeight: "40px" }}
                             >
                               🧾 Receipt
                             </button>
@@ -543,7 +554,7 @@ function AdminDashboard() {
         </div>
 
         <div className="row g-3 mb-4">
-          <div className="col-md-3 col-sm-6">
+          <div className="col-12 col-sm-6 col-lg-3">
             <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100" style={{ borderLeft: "4px solid #6b8f5e" }}>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -556,7 +567,7 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="col-md-3 col-sm-6">
+          <div className="col-12 col-sm-6 col-lg-3">
             <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100" style={{ borderLeft: "4px solid #2f4a3c" }}>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -569,7 +580,7 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="col-md-3 col-sm-6">
+          <div className="col-12 col-sm-6 col-lg-3">
             <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100" style={{ borderLeft: "4px solid #ffc107" }}>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -582,7 +593,7 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="col-md-3 col-sm-6">
+          <div className="col-12 col-sm-6 col-lg-3">
             <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100" style={{ borderLeft: "4px solid #198754" }}>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -596,7 +607,7 @@ function AdminDashboard() {
           </div>
         </div>
 
-        <ul className="nav nav-pills mb-4 bg-white p-2 rounded-4 shadow-sm">
+        <ul ref={tabListRef} className="nav nav-pills mb-4 bg-white p-2 rounded-4 shadow-sm admin-tab-bar">
           <li className="nav-item">
             <button
               className={`nav-item nav-link rounded-pill fw-semibold me-1 ${activeTab === "overview" ? "active text-white" : "text-dark"}`}
@@ -673,10 +684,9 @@ function AdminDashboard() {
                   <p className="text-muted text-center py-4">No bookings available.</p>
                 ) : (
                   <div className="table-responsive">
-                    <table className="table align-middle">
+                    <table className="table align-middle table-hover table-responsive-cards mb-0">
                       <thead className="table-light">
                         <tr>
-                          <th>ID</th>
                           <th>Guest</th>
                           <th>Room</th>
                           <th>Dates</th>
@@ -687,26 +697,29 @@ function AdminDashboard() {
                       <tbody>
                         {bookings.slice(0, 5).map((b) => (
                           <tr key={b.id}>
-                            <td><span className="badge bg-light text-dark fw-mono">{b.id}</span></td>
-                            <td>
-                              <div className="fw-bold">{b.fullName}</div>
+                            <td className="card-header-cell">
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>{b.fullName}</span>
+                                <span className="badge bg-light text-dark fw-mono">{b.id}</span>
+                              </div>
                               <div className="small text-muted">{b.email}</div>
                             </td>
-                            <td>
+                            <td data-label="Room">
                               <span className={`badge ${b.roomId === "villa" ? "bg-success" : "bg-warning text-dark"}`}>
                                 {b.roomName}
                               </span>
                             </td>
-                            <td className="small">{b.checkIn} to {b.checkOut}</td>
-                            <td>
+                            <td data-label="Dates" className="small">{b.checkIn} to {b.checkOut}</td>
+                            <td data-label="Status">
                               <span className={`badge ${b.status === "Confirmed" ? "bg-success" : b.status === "Pending" ? "bg-warning text-dark" : "bg-danger"}`}>
                                 {b.status}
                               </span>
                             </td>
-                            <td className="text-center">
+                            <td className="card-action-cell text-center">
                               <button
                                 onClick={() => handleViewReceipt(b)}
-                                className="btn btn-sm btn-outline-dark rounded-pill px-3"
+                                className="btn btn-outline-dark rounded-pill px-3 w-100"
+                                style={{ minHeight: "40px" }}
                                 title="View Printable Receipt & Confirmation Email"
                               >
                                 🧾 Receipt
@@ -803,10 +816,9 @@ function AdminDashboard() {
               </div>
             ) : (
               <div className="table-responsive">
-                <table className="table table-hover align-middle">
+                <table className="table table-hover align-middle table-responsive-cards mb-0">
                   <thead style={{ backgroundColor: "#eef2e6" }}>
                     <tr>
-                      <th>Booking ID</th>
                       <th>Guest Details</th>
                       <th>Room Type</th>
                       <th>Check In / Out</th>
@@ -819,34 +831,34 @@ function AdminDashboard() {
                   <tbody>
                     {filteredBookings.map((b) => (
                       <tr key={b.id}>
-                        <td>
-                          <span className="badge bg-dark font-monospace px-2 py-1">{b.id}</span>
-                        </td>
-                        <td>
-                          <div className="fw-bold">{b.fullName}</div>
+                        <td className="card-header-cell">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>{b.fullName}</span>
+                            <span className="badge bg-dark font-monospace px-2 py-1">{b.id}</span>
+                          </div>
                           <div className="small text-muted">{b.email}</div>
                         </td>
-                        <td>
+                        <td data-label="Room">
                           <span className={`badge ${b.roomId === "villa" ? "bg-success" : "bg-warning text-dark"}`}>
                             {b.roomName}
                           </span>
                         </td>
-                        <td className="small">
-                          <div><strong>In:</strong> {b.checkIn}</div>
-                          <div><strong>Out:</strong> {b.checkOut}</div>
+                        <td data-label="Dates" className="small">
+                          <div><strong>In:</strong> {b.checkIn} | <strong>Out:</strong> {b.checkOut}</div>
                         </td>
-                        <td className="text-center fw-semibold">{b.guests}</td>
-                        <td className="fw-bold text-success">{b.totalPrice}</td>
-                        <td>
+                        <td data-label="Guests" className="fw-semibold">{b.guests}</td>
+                        <td data-label="Total" className="fw-bold text-success">{b.totalPrice}</td>
+                        <td data-label="Status">
                           <span className={`badge rounded-pill px-3 py-2 ${b.status === "Confirmed" ? "bg-success" : b.status === "Pending" ? "bg-warning text-dark" : "bg-danger"}`}>
                             {b.status}
                           </span>
                         </td>
-                        <td className="text-center">
-                          <div className="btn-group btn-group-sm" role="group">
+                        <td className="card-action-cell text-center">
+                          <div className="d-flex flex-wrap gap-2 w-100" role="group">
                             <button
                               onClick={() => handleViewReceipt(b)}
-                              className="btn btn-outline-primary"
+                              className="btn btn-outline-primary rounded-pill px-3"
+                              style={{ minHeight: "40px", flex: "1 1 auto" }}
                               title="View Official Receipt & Confirmation Email"
                             >
                               🧾 Receipt
@@ -854,7 +866,8 @@ function AdminDashboard() {
                             {b.status !== "Confirmed" && b.status !== "Cancelled" && (
                               <button
                                 onClick={() => handleUpdateBookingStatus(b.id, "Confirmed")}
-                                className="btn btn-outline-success"
+                                className="btn btn-outline-success rounded-pill px-3"
+                                style={{ minHeight: "40px", flex: "1 1 auto" }}
                                 title="Approve / Confirm Booking"
                               >
                                 Confirm
@@ -863,7 +876,8 @@ function AdminDashboard() {
                             {b.status !== "Cancelled" && (
                               <button
                                 onClick={() => handleUpdateBookingStatus(b.id, "Cancelled")}
-                                className="btn btn-outline-warning"
+                                className="btn btn-outline-warning rounded-pill px-3"
+                                style={{ minHeight: "40px", flex: "1 1 auto" }}
                                 title="Cancel Booking"
                               >
                                 Cancel
@@ -871,7 +885,8 @@ function AdminDashboard() {
                             )}
                             <button
                               onClick={() => handleDeleteBooking(b.id)}
-                              className="btn btn-outline-danger"
+                              className="btn btn-outline-danger rounded-pill px-3"
+                              style={{ minHeight: "40px", flex: "1 1 auto" }}
                               title="Delete Record"
                             >
                               Delete
@@ -933,12 +948,10 @@ function AdminDashboard() {
               </div>
             ) : (
               <div className="table-responsive">
-                <table className="table table-hover align-middle">
+                <table className="table table-hover align-middle table-responsive-cards mb-0">
                   <thead style={{ backgroundColor: "#eef2e6" }}>
                     <tr>
-                      <th>User ID</th>
-                      <th>Account Name</th>
-                      <th>Email Address</th>
+                      <th>Account Details</th>
                       <th>Role</th>
                       <th>Date Registered</th>
                       <th>Bookings</th>
@@ -951,38 +964,42 @@ function AdminDashboard() {
                       const userBookingsCount = bookings.filter((b) => b.email.toLowerCase() === u.email.toLowerCase()).length;
                       return (
                         <tr key={u.id}>
-                          <td>
-                            <span className="badge bg-secondary font-monospace px-2 py-1">{u.id}</span>
+                          <td className="card-header-cell">
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>{u.name}</span>
+                              <span className="badge bg-secondary font-monospace px-2 py-1">{u.id}</span>
+                            </div>
+                            <div className="small text-muted">{u.email}</div>
                           </td>
-                          <td className="fw-bold">{u.name}</td>
-                          <td className="text-muted">{u.email}</td>
-                          <td>
+                          <td data-label="Role">
                             <span className="badge bg-light text-dark border">
                               {u.role || "Guest"}
                             </span>
                           </td>
-                          <td className="small text-muted">{u.dateRegistered}</td>
-                          <td className="text-center">
+                          <td data-label="Registered" className="small text-muted">{u.dateRegistered}</td>
+                          <td data-label="Bookings">
                             <span className="badge rounded-pill bg-info text-dark">
                               {userBookingsCount} booking(s)
                             </span>
                           </td>
-                          <td>
+                          <td data-label="Status">
                             <span className={`badge rounded-pill px-3 py-2 ${u.status === "Active" ? "bg-success" : "bg-secondary"}`}>
                               {u.status}
                             </span>
                           </td>
-                          <td className="text-center">
-                            <div className="btn-group btn-group-sm" role="group">
+                          <td className="card-action-cell text-center">
+                            <div className="d-flex gap-2 w-100" role="group">
                               <button
                                 onClick={() => handleToggleUserStatus(u.id)}
-                                className={`btn ${u.status === "Active" ? "btn-outline-secondary" : "btn-outline-success"}`}
+                                className={`btn rounded-pill px-3 ${u.status === "Active" ? "btn-outline-secondary" : "btn-outline-success"}`}
+                                style={{ minHeight: "40px", flex: "1 1 0" }}
                               >
                                 {u.status === "Active" ? "Deactivate" : "Activate"}
                               </button>
                               <button
                                 onClick={() => handleDeleteUser(u.id, u.name)}
-                                className="btn btn-outline-danger"
+                                className="btn btn-outline-danger rounded-pill px-3"
+                                style={{ minHeight: "40px", flex: "1 1 0" }}
                               >
                                 Delete
                               </button>
@@ -1003,21 +1020,21 @@ function AdminDashboard() {
             <div className="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
               <h5 className="fw-bold mb-3" style={{ color: "#2f4a3c" }}>🏠 Room Availability Overview</h5>
               <div className="row g-3">
-                <div className="col-md-4">
+                <div className="col-12 col-md-4">
                   <div className="rounded-3 p-3 text-center" style={{ backgroundColor: "#eef2e6", border: "1px solid #c8dfc0" }}>
                     <div className="small text-muted fw-semibold text-uppercase mb-1">Total Rooms</div>
                     <div className="fs-2 fw-bold" style={{ color: "#2f4a3c" }}>{VILLA_TOTAL + KUBO_TOTAL}</div>
                     <div className="small text-muted">{VILLA_TOTAL} Villa + {KUBO_TOTAL} Kubo</div>
                   </div>
                 </div>
-                <div className="col-md-4">
+                <div className="col-12 col-md-4">
                   <div className="rounded-3 p-3 text-center" style={{ backgroundColor: "#fff3cd", border: "1px solid #ffc107" }}>
                     <div className="small fw-semibold text-uppercase mb-1" style={{ color: "#856404" }}>Occupied / Reserved</div>
                     <div className="fs-2 fw-bold" style={{ color: "#856404" }}>{villaOccupied + kuboOccupied}</div>
                     <div className="small" style={{ color: "#856404" }}>{villaOccupied} Villa · {kuboOccupied} Kubo</div>
                   </div>
                 </div>
-                <div className="col-md-4">
+                <div className="col-12 col-md-4">
                   <div className="rounded-3 p-3 text-center" style={{ backgroundColor: "#d1e7dd", border: "1px solid #198754" }}>
                     <div className="small fw-semibold text-uppercase mb-1" style={{ color: "#0f5132" }}>Available</div>
                     <div className="fs-2 fw-bold" style={{ color: "#0f5132" }}>{villaAvailable + kuboAvailable}</div>
@@ -1028,7 +1045,7 @@ function AdminDashboard() {
             </div>
 
             <div className="row g-4">
-              <div className="col-md-6">
+              <div className="col-12 col-lg-6">
                 <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <h4 className="fw-bold mb-0" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
@@ -1038,7 +1055,7 @@ function AdminDashboard() {
                       {villaAvailable > 0 ? "Available" : "Fully Booked"}
                     </span>
                   </div>
-                  <img src="/villa-1.jpg" alt="Villa" className="rounded-3 mb-3" style={{ height: "200px", objectFit: "cover" }} />
+                  <img src="/villa-1.jpg" alt="Villa" className="rounded-3 mb-3 w-100" style={{ height: "200px", objectFit: "cover", aspectRatio: "16/9" }} />
                   <p className="text-muted small">
                     Spacious luxury air-conditioned accommodations suitable for family stays and small groups.
                   </p>
@@ -1074,7 +1091,7 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="col-md-6">
+              <div className="col-12 col-lg-6">
                 <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <h4 className="fw-bold mb-0" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
@@ -1084,7 +1101,7 @@ function AdminDashboard() {
                       {kuboAvailable > 0 ? "Available" : "Fully Booked"}
                     </span>
                   </div>
-                  <img src="/kubo-1.jpg" alt="Kubo" className="rounded-3 mb-3" style={{ height: "200px", objectFit: "cover" }} />
+                  <img src="/kubo-1.jpg" alt="Kubo" className="rounded-3 mb-3 w-100" style={{ height: "200px", objectFit: "cover", aspectRatio: "16/9" }} />
                   <p className="text-muted small">
                     Cozy tropical bamboo kubo experience surrounded by nature and refreshing natural breeze.
                   </p>
@@ -1157,141 +1174,173 @@ function AdminDashboard() {
       </div>
 
       {showAddUserModal && (
-        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4 border-0 shadow-lg p-3">
-              <div className="modal-header border-0">
-                <h5 className="modal-header-title fw-bold" style={{ color: "#2f4a3c" }}>
-                  Register New User Account
-                </h5>
-                <button type="button" className="btn-close" onClick={() => setShowAddUserModal(false)}></button>
-              </div>
-              <form onSubmit={handleCreateUser}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold text-muted">Full Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="e.g. Maria Santos"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold text-muted">Email Address *</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      placeholder="name@example.com"
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="modal-footer border-0">
-                  <button type="button" className="btn btn-light rounded-pill px-4" onClick={() => setShowAddUserModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn text-white rounded-pill px-4 fw-bold" style={{ backgroundColor: "#2f4a3c" }}>
-                    Create Account
-                  </button>
-                </div>
-              </form>
+        <div className="casa-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowAddUserModal(false); }}>
+          <div className="casa-modal-card" style={{ width: "min(95vw, 500px)", maxHeight: "90vh" }}>
+            <div className="d-flex justify-content-between align-items-center p-3 border-bottom" style={{ backgroundColor: "#2f4a3c" }}>
+              <h5 className="fw-bold mb-0 text-white">
+                Register New User Account
+              </h5>
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                aria-label="Close modal"
+                onClick={() => setShowAddUserModal(false)}
+              ></button>
             </div>
+            <form onSubmit={handleCreateUser} className="d-flex flex-column" style={{ overflow: "hidden" }}>
+              <div className="casa-modal-scroll-body">
+                <div className="mb-3">
+                  <label className="form-label small fw-bold text-muted">Full Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Maria Santos"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    style={{ minHeight: "44px" }}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label small fw-bold text-muted">Email Address *</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="name@example.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    required
+                    style={{ minHeight: "44px" }}
+                  />
+                </div>
+              </div>
+              <div className="p-3 border-top bg-light d-flex justify-content-end gap-2 flex-wrap">
+                <button
+                  type="button"
+                  className="btn btn-light rounded-pill px-4 flex-grow-1 flex-md-grow-0"
+                  style={{ minHeight: "44px" }}
+                  onClick={() => setShowAddUserModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn text-white rounded-pill px-4 fw-bold flex-grow-1 flex-md-grow-0"
+                  style={{ backgroundColor: "#2f4a3c", minHeight: "44px" }}
+                >
+                  Create Account
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {showAddBookingModal && (
-        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content rounded-4 border-0 shadow-lg p-3">
-              <div className="modal-header border-0">
-                <h5 className="modal-title fw-bold" style={{ color: "#2f4a3c" }}>
-                  Add New Reservation / Booking
-                </h5>
-                <button type="button" className="btn-close" onClick={() => setShowAddBookingModal(false)}></button>
-              </div>
-              <form onSubmit={handleCreateBooking}>
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label small fw-bold text-muted">Guest Full Name *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Juan Dela Cruz"
-                        value={newBookingName}
-                        onChange={(e) => setNewBookingName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-bold text-muted">Email Address *</label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        placeholder="guest@example.com"
-                        value={newBookingEmail}
-                        onChange={(e) => setNewBookingEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-bold text-muted">Room Selection</label>
-                      <select
-                        className="form-select"
-                        value={newBookingRoom}
-                        onChange={(e) => setNewBookingRoom(e.target.value)}
-                      >
-                        <option value="villa">Villa Type Room (₱3,500/night)</option>
-                        <option value="kubo">Kubo Type Room (₱2,200/night)</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-bold text-muted">Guests Count</label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="form-control"
-                        value={newBookingGuests}
-                        onChange={(e) => setNewBookingGuests(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-bold text-muted">Check-in Date *</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={newBookingCheckIn}
-                        onChange={(e) => setNewBookingCheckIn(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-bold text-muted">Check-out Date *</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={newBookingCheckOut}
-                        onChange={(e) => setNewBookingCheckOut(e.target.value)}
-                        required
-                      />
-                    </div>
+        <div className="casa-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowAddBookingModal(false); }}>
+          <div className="casa-modal-card" style={{ width: "min(95vw, 800px)", maxHeight: "90vh" }}>
+            <div className="d-flex justify-content-between align-items-center p-3 border-bottom" style={{ backgroundColor: "#2f4a3c" }}>
+              <h5 className="fw-bold mb-0 text-white">
+                Add New Reservation / Booking
+              </h5>
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                aria-label="Close modal"
+                onClick={() => setShowAddBookingModal(false)}
+              ></button>
+            </div>
+            <form onSubmit={handleCreateBooking} className="d-flex flex-column" style={{ overflow: "hidden" }}>
+              <div className="casa-modal-scroll-body">
+                <div className="row g-3">
+                  <div className="col-12 col-md-6">
+                    <label className="form-label small fw-bold text-muted">Guest Full Name *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Juan Dela Cruz"
+                      value={newBookingName}
+                      onChange={(e) => setNewBookingName(e.target.value)}
+                      required
+                      style={{ minHeight: "44px" }}
+                    />
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <label className="form-label small fw-bold text-muted">Email Address *</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="guest@example.com"
+                      value={newBookingEmail}
+                      onChange={(e) => setNewBookingEmail(e.target.value)}
+                      required
+                      style={{ minHeight: "44px" }}
+                    />
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <label className="form-label small fw-bold text-muted">Room Selection</label>
+                    <select
+                      className="form-select"
+                      value={newBookingRoom}
+                      onChange={(e) => setNewBookingRoom(e.target.value)}
+                      style={{ minHeight: "44px" }}
+                    >
+                      <option value="villa">Villa Type Room (₱3,500/night)</option>
+                      <option value="kubo">Kubo Type Room (₱2,200/night)</option>
+                    </select>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <label className="form-label small fw-bold text-muted">Guests Count</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="form-control"
+                      value={newBookingGuests}
+                      onChange={(e) => setNewBookingGuests(e.target.value)}
+                      style={{ minHeight: "44px" }}
+                    />
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <label className="form-label small fw-bold text-muted">Check-in Date *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={newBookingCheckIn}
+                      onChange={(e) => setNewBookingCheckIn(e.target.value)}
+                      required
+                      style={{ minHeight: "44px" }}
+                    />
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <label className="form-label small fw-bold text-muted">Check-out Date *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={newBookingCheckOut}
+                      onChange={(e) => setNewBookingCheckOut(e.target.value)}
+                      required
+                      style={{ minHeight: "44px" }}
+                    />
                   </div>
                 </div>
-                <div className="modal-footer border-0">
-                  <button type="button" className="btn btn-light rounded-pill px-4" onClick={() => setShowAddBookingModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn text-white rounded-pill px-4 fw-bold" style={{ backgroundColor: "#6b8f5e" }}>
-                    Confirm Booking
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div className="p-3 border-top bg-light d-flex justify-content-end gap-2 flex-wrap">
+                <button
+                  type="button"
+                  className="btn btn-light rounded-pill px-4 flex-grow-1 flex-md-grow-0"
+                  style={{ minHeight: "44px" }}
+                  onClick={() => setShowAddBookingModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn text-white rounded-pill px-4 fw-bold flex-grow-1 flex-md-grow-0"
+                  style={{ backgroundColor: "#6b8f5e", minHeight: "44px" }}
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { auth, googleProvider, db } from "./firebase";
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "./firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { 
   doc, 
   getDoc, 
@@ -11,7 +11,7 @@ import {
   getDocs, 
   serverTimestamp 
 } from "firebase/firestore";
-import { isAuthorizedAdminEmail } from "./authUtils";
+import { isAuthorizedAdminEmail, signInWithGoogle, isInAppBrowser } from "./authUtils";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -19,6 +19,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [statusType, setStatusType] = useState("info");
+  const inAppBrowser = isInAppBrowser();
 
   const params = new URLSearchParams(window.location.search);
   const redirectTarget = params.get("redirect");
@@ -149,7 +150,7 @@ function Login() {
     setStatusType("info");
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithGoogle();
       await scanRoleAndRedirect(result.user);
     } catch (error) {
       console.error("Google login failed:", error);
@@ -218,10 +219,10 @@ function Login() {
         className="rounded-4 shadow-lg"
         style={{
           backgroundColor: "#ffffff",
-          maxWidth: "355px",
+          maxWidth: "380px",
           width: "100%",
           padding: "1.5rem 1.25rem",
-          margin: "0 16px",
+          margin: "0 auto",
           border: "1px solid #d8e0c9",
           boxSizing: "border-box",
         }}
@@ -328,6 +329,12 @@ function Login() {
             <hr className="flex-grow-1 my-0" />
           </div>
 
+          {inAppBrowser && (
+            <div className="alert alert-warning py-2 px-3 small text-start mb-2" style={{ fontSize: "0.78rem" }}>
+              Google sign-in doesn't work inside this app's browser. Tap the ... menu and choose 'Open in Chrome/Browser', or log in with your email and password.
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -338,7 +345,7 @@ function Login() {
               height: "44px",
               fontSize: "0.88rem",
             }}
-            disabled={loading}
+            disabled={loading || inAppBrowser}
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />

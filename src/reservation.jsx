@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ReceiptModal from "./ReceiptModal.jsx";
-import { API_URL } from "./apiConfig.js";
+import { API_URL } from "./config.js";
 
 function Reservation() {
   const [activeCategory, setActiveCategory] = useState("villa"); 
@@ -12,6 +12,9 @@ function Reservation() {
   const [email, setEmail] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState("form"); // "form" | "success"
 
   const [createdBooking, setCreatedBooking] = useState(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -191,6 +194,16 @@ function Reservation() {
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && isBookingModalOpen) {
+        handleCloseBookingModal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isBookingModalOpen, modalStep]);
+
+  useEffect(() => {
     if (activeCategory) {
       const availableRooms = rooms.filter((r) => r.type === activeCategory);
       const firstAvailable = availableRooms.find((r) => !isRoomReserved(r.id));
@@ -208,6 +221,29 @@ function Reservation() {
       }
     }
   }, [selectedRoom]);
+
+  const handleOpenBookingModal = (room) => {
+    if (room) {
+      setSelectedRoom(room);
+      setActiveCategory(room.type);
+    }
+    setConfirmation("");
+    setModalStep("form");
+    setIsBookingModalOpen(true);
+  };
+
+  const handleCloseBookingModal = () => {
+    setIsBookingModalOpen(false);
+    setConfirmation("");
+    setIsSubmitting(false);
+    if (modalStep === "success") {
+      setCheckIn("");
+      setCheckOut("");
+      setGuests(1);
+      setModalStep("form");
+      setCreatedBooking(null);
+    }
+  };
 
   const decrementGuests = () => {
     setGuests((prev) => {
@@ -280,7 +316,10 @@ function Reservation() {
   const totalDailyRate = basePricePerNight + extraGuestFeePerNight;
 
   const calculatedTotal = totalDailyRate * effectiveNights;
-  const vatIncluded = Math.round(calculatedTotal * 0.12);
+  const vatIncluded = (calculatedTotal * 12) / 112;
+  const vatableSales = calculatedTotal - vatIncluded;
+  const formattedVat = `₱${vatIncluded.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedVatable = `₱${vatableSales.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -290,7 +329,7 @@ function Reservation() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!selectedRoom) {
-      setConfirmation("error:Please select a room unit before confirming your reservation.");
+      setConfirmation("error:Please select a room before confirming your reservation.");
       return;
     }
 
@@ -342,6 +381,7 @@ function Reservation() {
       return;
     }
 
+    const startTime = Date.now();
     setIsSubmitting(true);
     setConfirmation("");
 
@@ -363,10 +403,16 @@ function Reservation() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status} (${response.statusText || "Error"})`);
+        throw new Error(`Server returned HTTP ${response.status}`);
       }
 
       const savedData = await response.json();
+
+      // Ensure visible loading state of at least 1.2s
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 1200) {
+        await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed));
+      }
 
       const newBookingRecord = {
         id: String(savedData?.id || `BK-${Date.now().toString().slice(-6)}`),
@@ -399,13 +445,16 @@ function Reservation() {
       }
 
       setCreatedBooking(newBookingRecord);
-      setIsReceiptOpen(true);
-      setConfirmation(`success:Reservation confirmed! Reference ID #${newBookingRecord.id}. Official receipt generated below.`);
+      setModalStep("success");
       loadAllBookings(trimmedEmail);
     } catch (err) {
       console.error("Booking reservation error:", err);
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 1200) {
+        await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed));
+      }
       setConfirmation(
-        `error:The booking server did not respond (${API_URL}). Please verify that the backend server is running and try again.`
+        "error:The booking server did not respond. Please ensure the backend is running and try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -482,7 +531,12 @@ function Reservation() {
             {categories.map((cat) => (
               <div className="col-md-5" key={cat.id}>
                 <div
-                  onClick={() => setActiveCategory(cat.id)}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    const catRooms = rooms.filter((r) => r.type === cat.id);
+                    const availableDefault = catRooms.find((r) => !isRoomReserved(r.id)) || catRooms[0];
+                    handleOpenBookingModal(availableDefault);
+                  }}
                   style={{
                     cursor: "pointer",
                     border: activeCategory === cat.id ? "3px solid #6b8f5e" : "2px solid #d8e0c9",
@@ -503,11 +557,9 @@ function Reservation() {
                       <h4 className="fw-bold mb-0" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
                         {cat.name}
                       </h4>
-                      {activeCategory === cat.id && (
-                        <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#6b8f5e", color: "#ffffff" }}>
-                          ✓ Active Category
-                        </span>
-                      )}
+                      <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#6b8f5e", color: "#ffffff" }}>
+                        Book Now &rarr;
+                      </span>
                     </div>
                     <p className="small mb-2 text-muted">{cat.description}</p>
                     <p className="fw-bold fs-5 mb-0" style={{ color: "#2f4a3c" }}>
@@ -534,7 +586,7 @@ function Reservation() {
                     return (
                       <div className="villa-card-col" key={room.id}>
                         <div
-                          onClick={() => !reserved && setSelectedRoom(room)}
+                          onClick={() => !reserved && handleOpenBookingModal(room)}
                           className={`villa-unit-card h-100 ${isSelected ? "selected" : ""}`}
                           style={{
                             cursor: reserved ? "not-allowed" : "pointer",
@@ -585,21 +637,21 @@ function Reservation() {
                               </div>
                             </div>
                             <div className="mt-2" style={{ minHeight: "26px" }}>
-                              {isSelected && !reserved ? (
+                              {reserved ? (
+                                <span className="small text-muted" style={{ fontSize: "0.72rem" }}>
+                                  Unavailable
+                                </span>
+                              ) : (
                                 <span
                                   className="badge rounded-pill px-2 py-1 d-inline-flex align-items-center justify-content-center"
                                   style={{
-                                    backgroundColor: "#6b8f5e",
+                                    backgroundColor: isSelected ? "#6b8f5e" : "#2f4a3c",
                                     color: "#ffffff",
                                     fontSize: "0.72rem",
                                     fontWeight: "600",
                                   }}
                                 >
-                                  ✓ Selected
-                                </span>
-                              ) : (
-                                <span className="small text-muted" style={{ fontSize: "0.72rem" }}>
-                                  {reserved ? "Unavailable" : "Tap to select"}
+                                  {isSelected ? "✓ Selected (Tap to Book)" : "Tap to Book"}
                                 </span>
                               )}
                             </div>
@@ -613,226 +665,408 @@ function Reservation() {
           )}
         </div>
 
-        <div className="row justify-content-center">
-          <div className="col-lg-10">
-            <div className="p-4 p-md-5 rounded-4 shadow-lg" style={{ backgroundColor: "#ffffff", border: "1px solid #d8e0c9" }}>
-              <h3 className="fw-bold mb-4 text-center" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
-                Step 2: Enter Details & Review Booking Receipt Breakdown
-              </h3>
+        {/* Centered Modal Card for Booking Details & Receipt */}
+        {isBookingModalOpen && (
+          <div
+            className="booking-modal-overlay"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleCloseBookingModal();
+            }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.65)",
+              zIndex: 1050,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+              backdropFilter: "blur(2px)",
+            }}
+          >
+            <div
+              className="booking-modal-card card shadow-lg border-0 rounded-4 position-relative"
+              style={{
+                width: "min(95vw, 900px)",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                backgroundColor: "#ffffff",
+                boxSizing: "border-box",
+              }}
+            >
+              {/* Close "X" Button */}
+              <button
+                type="button"
+                className="btn-close position-absolute top-0 end-0 m-3 z-3"
+                onClick={handleCloseBookingModal}
+                aria-label="Close"
+                style={{ minHeight: "44px", minWidth: "44px", padding: "12px" }}
+              ></button>
 
-              {confirmation && (
-                <div
-                  className={`alert ${confirmation.startsWith("success") ? "alert-success" : "alert-danger"} d-flex flex-wrap justify-content-between align-items-center gap-2`}
-                  role="alert"
-                >
-                  <div className="d-flex align-items-center gap-2">
-                    <span>{confirmation.startsWith("success") ? "✅" : "⚠️"}</span>
-                    <span>{confirmation.includes(":") ? confirmation.split(":").slice(1).join(":") : confirmation}</span>
-                  </div>
-                  {createdBooking && confirmation.startsWith("success") && (
-                    <div className="d-flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsReceiptOpen(true)}
-                        className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
-                      >
-                        🧾 View Receipt & Email
-                      </button>
+              <div className="card-body p-3 p-sm-4 p-md-5">
+                {modalStep === "form" ? (
+                  <>
+                    <div className="text-center mb-4 pe-4">
+                      <span className="badge rounded-pill px-3 py-1 mb-2" style={{ backgroundColor: "#6b8f5e", color: "#ffffff", fontSize: "0.8rem" }}>
+                        {selectedRoom?.typeName || "Room Reservation"}
+                      </span>
+                      <h3 className="fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
+                        Reserve {selectedRoom?.name || "Your Stay"}
+                      </h3>
+                      <p className="text-muted small mb-0">
+                        Enter details below to view instant price breakdown and receive your receipt.
+                      </p>
                     </div>
-                  )}
-                </div>
-              )}
 
-              <form onSubmit={handleSubmit}>
-                <div className="row g-4">
-                  <div className="col-md-7">
-                    <div className="row g-3">
-                      <div className="col-md-6">
-                        <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>Full Name *</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          placeholder="Juan Dela Cruz"
-                          required
-                        />
+                    {confirmation && (
+                      <div className="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+                        <span>⚠️</span>
+                        <span>{confirmation.includes(":") ? confirmation.split(":").slice(1).join(":") : confirmation}</span>
                       </div>
-                      <div className="col-md-6">
-                        <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>Email Address *</label>
-                        <input
-                          type="email"
-                          className="form-control"
-                          value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            loadAllBookings(e.target.value);
-                          }}
-                          placeholder="name@example.com"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>Check-in Date *</label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={checkIn}
-                          onChange={(e) => setCheckIn(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>Check-out Date *</label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={checkOut}
-                          onChange={(e) => setCheckOut(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="col-md-12">
-                        <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
-                          Number of Persons Checking In * (Max: {roomMaxCapacity})
-                        </label>
-                        <div className="input-group">
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                            style={{
-                              minHeight: "42px",
-                              minWidth: "48px",
-                              fontSize: "1.25rem",
-                              fontWeight: "bold",
-                              borderColor: "#ced4da"
-                            }}
-                            onClick={decrementGuests}
-                            disabled={Number(guests) <= 1}
-                            aria-label="Decrease number of guests"
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            max={roomMaxCapacity}
-                            step="1"
-                            className="form-control text-center fw-bold"
-                            style={{ minHeight: "42px", fontSize: "1.05rem" }}
-                            value={guests}
-                            onChange={handleGuestsChange}
-                            onBlur={handleGuestsBlur}
-                            required
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                            style={{
-                              minHeight: "42px",
-                              minWidth: "48px",
-                              fontSize: "1.25rem",
-                              fontWeight: "bold",
-                              borderColor: "#ced4da"
-                            }}
-                            onClick={incrementGuests}
-                            disabled={Number(guests) >= roomMaxCapacity}
-                            aria-label="Increase number of guests"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <small className="text-muted d-block mt-1" style={{ fontSize: "0.8rem" }}>
-                          Base rate includes up to 2 persons. Extra persons: +₱{extraGuestRate}/night each (up to {roomMaxCapacity} guests max).
-                        </small>
-                      </div>
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="col-md-5">
-                    <div className="p-4 rounded-4 h-100 d-flex flex-column justify-content-between" style={{ backgroundColor: "#f8faf6", border: "2px dashed #b8c9af" }}>
-                      <div>
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c", fontFamily: "'Playfair Display', serif" }}>
-                            🧾 Live Cost Calculation
-                          </h5>
-                          <span className="badge bg-secondary font-monospace">DYNAMIC</span>
-                        </div>
-
-                        {selectedRoom ? (
-                          <>
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Room Selected:</span>
-                              <strong className="text-dark">{selectedRoom.name} ({selectedRoom.typeName})</strong>
+                    <form onSubmit={handleSubmit}>
+                      <div className="row g-4">
+                        {/* Form (Left Column on Laptop, Full Width on Mobile) */}
+                        <div className="col-12 col-md-7">
+                          <div className="row g-3">
+                            <div className="col-12 col-sm-6">
+                              <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
+                                Full Name *
+                              </label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder="Juan Dela Cruz"
+                                required
+                                style={{ minHeight: "44px", fontSize: "16px" }}
+                              />
                             </div>
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Base Rate (2 Guests):</span>
-                              <strong>₱{basePricePerNight.toLocaleString()} / night</strong>
+                            <div className="col-12 col-sm-6">
+                              <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
+                                Email Address *
+                              </label>
+                              <input
+                                type="email"
+                                className="form-control"
+                                value={email}
+                                onChange={(e) => {
+                                  setEmail(e.target.value);
+                                  loadAllBookings(e.target.value);
+                                }}
+                                placeholder="name@example.com"
+                                required
+                                style={{ minHeight: "44px", fontSize: "16px" }}
+                              />
                             </div>
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Guests Checking In:</span>
-                              <strong>{guestCount} Person(s)</strong>
+                            <div className="col-12 col-sm-6">
+                              <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
+                                Check-in Date *
+                              </label>
+                              <input
+                                type="date"
+                                className="form-control"
+                                value={checkIn}
+                                onChange={(e) => setCheckIn(e.target.value)}
+                                required
+                                style={{ minHeight: "44px", fontSize: "16px" }}
+                              />
                             </div>
-                            {extraGuests > 0 && (
-                              <div className="d-flex justify-content-between align-items-center mb-2 small text-primary">
-                                <span>Extra Guests ({extraGuests}x):</span>
-                                <strong>+₱{extraGuestFeePerNight.toLocaleString()} / night</strong>
+                            <div className="col-12 col-sm-6">
+                              <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
+                                Check-out Date *
+                              </label>
+                              <input
+                                type="date"
+                                className="form-control"
+                                value={checkOut}
+                                onChange={(e) => setCheckOut(e.target.value)}
+                                required
+                                style={{ minHeight: "44px", fontSize: "16px" }}
+                              />
+                            </div>
+                            <div className="col-12">
+                              <label className="form-label small fw-semibold" style={{ color: "#2f4a3c" }}>
+                                Number of Persons Checking In * (Max: {roomMaxCapacity})
+                              </label>
+                              <div className="input-group">
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                                  style={{
+                                    minHeight: "44px",
+                                    minWidth: "48px",
+                                    fontSize: "1.25rem",
+                                    fontWeight: "bold",
+                                    borderColor: "#ced4da",
+                                  }}
+                                  onClick={decrementGuests}
+                                  disabled={Number(guests) <= 1}
+                                  aria-label="Decrease number of guests"
+                                >
+                                  −
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={roomMaxCapacity}
+                                  step="1"
+                                  className="form-control text-center fw-bold"
+                                  style={{ minHeight: "44px", fontSize: "16px" }}
+                                  value={guests}
+                                  onChange={handleGuestsChange}
+                                  onBlur={handleGuestsBlur}
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                                  style={{
+                                    minHeight: "44px",
+                                    minWidth: "48px",
+                                    fontSize: "1.25rem",
+                                    fontWeight: "bold",
+                                    borderColor: "#ced4da",
+                                  }}
+                                  onClick={incrementGuests}
+                                  disabled={Number(guests) >= roomMaxCapacity}
+                                  aria-label="Increase number of guests"
+                                >
+                                  +
+                                </button>
                               </div>
-                            )}
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Days / Nights Staying:</span>
-                              <strong>{nightsCount > 0 ? `${nightsCount} Night(s)` : "Please set dates"}</strong>
+                              <small className="text-muted d-block mt-1" style={{ fontSize: "0.8rem" }}>
+                                Base rate includes up to 2 persons. Extra persons: +₱{extraGuestRate}/night each (up to {roomMaxCapacity} guests max).
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Column (Live Cost Panel) on Laptop, Below Form on Mobile */}
+                        <div className="col-12 col-md-5">
+                          <div
+                            className="p-3 p-md-4 rounded-4 h-100 d-flex flex-column justify-content-between"
+                            style={{ backgroundColor: "#f8faf6", border: "2px dashed #b8c9af" }}
+                          >
+                            <div>
+                              <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c", fontFamily: "'Playfair Display', serif" }}>
+                                  🧾 Live Cost Calculation
+                                </h5>
+                                <span className="badge bg-secondary font-monospace">DYNAMIC</span>
+                              </div>
+
+                              {selectedRoom && (
+                                <>
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span className="text-muted">Room Selected:</span>
+                                    <strong className="text-dark">{selectedRoom.name} ({selectedRoom.typeName})</strong>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span className="text-muted">Base Rate (2 Guests):</span>
+                                    <strong>₱{basePricePerNight.toLocaleString()} / night</strong>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span className="text-muted">Guests Checking In:</span>
+                                    <strong>{guestCount} Person(s)</strong>
+                                  </div>
+                                  {extraGuests > 0 && (
+                                    <div className="d-flex justify-content-between align-items-center mb-2 small text-primary">
+                                      <span>Extra Guests ({extraGuests}x):</span>
+                                      <strong>+₱{extraGuestFeePerNight.toLocaleString()} / night</strong>
+                                    </div>
+                                  )}
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span className="text-muted">Days / Nights Staying:</span>
+                                    <strong>{nightsCount > 0 ? `${nightsCount} Night(s)` : "Please set dates"}</strong>
+                                  </div>
+
+                                  <hr className="my-2" />
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span className="text-muted">Nightly Subtotal:</span>
+                                    <span className="font-monospace">₱{totalDailyRate.toLocaleString()} / night</span>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span className="text-muted">Grand Subtotal ({effectiveNights} night{effectiveNights > 1 ? "s" : ""}):</span>
+                                    <span className="font-monospace fw-semibold">₱{calculatedTotal.toLocaleString()}</span>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center mb-1 small text-muted">
+                                    <span>VATable Sales:</span>
+                                    <span className="font-monospace">{formattedVatable}</span>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center mb-2 small text-muted">
+                                    <span>12% VAT Included:</span>
+                                    <span className="font-monospace">{formattedVat}</span>
+                                  </div>
+                                  <hr className="my-2" />
+                                  <div className="d-flex justify-content-between align-items-center pt-1">
+                                    <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>Total Cost:</span>
+                                    <span className="fw-bold fs-4 text-success font-monospace">₱{calculatedTotal.toLocaleString()}</span>
+                                  </div>
+                                </>
+                              )}
                             </div>
 
-                            <hr className="my-2" />
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Nightly Subtotal:</span>
-                              <span className="font-monospace">₱{totalDailyRate.toLocaleString()} / night</span>
+                            <div className="mt-3">
+                              <button
+                                type="submit"
+                                disabled={!selectedRoom || isRoomReserved(selectedRoom?.id) || isSubmitting}
+                                className="btn w-100 py-3 rounded-pill fw-bold text-white shadow mb-2 d-flex align-items-center justify-content-center gap-2"
+                                style={{
+                                  backgroundColor: isSubmitting ? "#6b8f5e" : "#2f4a3c",
+                                  border: "none",
+                                  cursor: isSubmitting ? "wait" : "pointer",
+                                  minHeight: "48px",
+                                }}
+                              >
+                                {isSubmitting ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span>Processing...</span>
+                                  </>
+                                ) : (
+                                  <span>Confirm & Generate Receipt &rarr;</span>
+                                )}
+                              </button>
+                              <small className="text-muted d-block text-center" style={{ fontSize: "0.75rem" }}>
+                                ✓ Self-cancellation within 24h. Instant official receipt and record.
+                              </small>
                             </div>
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Grand Subtotal ({effectiveNights} night{effectiveNights > 1 ? "s" : ""}):</span>
-                              <span className="font-monospace fw-semibold">₱{calculatedTotal.toLocaleString()}</span>
-                            </div>
-                            <div className="d-flex justify-content-between align-items-center mb-2 small">
-                              <span className="text-muted">Taxes (12% VAT Included):</span>
-                              <span className="font-monospace text-muted">₱{vatIncluded.toLocaleString()}</span>
-                            </div>
-                            <hr className="my-2" />
-                            <div className="d-flex justify-content-between align-items-center pt-1">
-                              <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>Total Cost:</span>
-                              <span className="fw-bold fs-4 text-success font-monospace">₱{calculatedTotal.toLocaleString()}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-muted small">Please select a room category above to view price breakdown.</p>
-                        )}
+                          </div>
+                        </div>
                       </div>
-
-                      <div className="mt-3">
-                        <small className="text-muted d-block mb-3">
-                          ✓ Self-cancellation within 24h. Instant official receipt and email notification.
-                        </small>
-
-                        <button
-                          type="submit"
-                          disabled={!selectedRoom || isRoomReserved(selectedRoom?.id) || isSubmitting}
-                          className="btn w-100 py-3 rounded-pill fw-bold text-white shadow mb-3"
+                    </form>
+                  </>
+                ) : (
+                  /* Success View in the SAME Card */
+                  createdBooking && (
+                    <div>
+                      <div className="text-center my-2">
+                        <div
+                          className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
                           style={{
-                            backgroundColor: isSubmitting ? "#6b8f5e" : "#2f4a3c",
-                            border: "none",
-                            cursor: isSubmitting ? "wait" : "pointer"
+                            width: "68px",
+                            height: "68px",
+                            backgroundColor: "#eafaf1",
+                            border: "3px solid #198754",
                           }}
                         >
-                          {isSubmitting ? "Processing Reservation..." : "Confirm & Generate Receipt \u2192"}
+                          <span style={{ fontSize: "36px", color: "#198754", lineHeight: 1 }}>✓</span>
+                        </div>
+                        <h3 className="fw-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>
+                          Booking Successful!
+                        </h3>
+                        <p className="text-muted small mb-3">
+                          Thank you! Your reservation has been recorded. Here is your official receipt summary:
+                        </p>
+                      </div>
+
+                      <div
+                        className="printable-receipt p-3 p-md-4 rounded-3 mb-4 mx-auto"
+                        style={{
+                          backgroundColor: "#fdfdfd",
+                          border: "2px dashed #b0b8c1",
+                          fontFamily: "'Courier New', Courier, monospace",
+                          fontSize: "14px",
+                          color: "#2c3e50",
+                          maxWidth: "520px",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        <div className="text-center mb-2">
+                          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: "bold", color: "#2f4a3c" }}>
+                            Casa Gracia's Hotel & Resort
+                          </div>
+                          <div style={{ fontSize: "11px", letterSpacing: "1px", textTransform: "uppercase", color: "#6c757d" }}>
+                            Official Booking Receipt
+                          </div>
+                        </div>
+
+                        <div style={{ borderTop: "2px dashed #b0b8c1", margin: "10px 0" }}></div>
+
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>REFERENCE ID:</strong>
+                          <span className="font-monospace fw-bold">{createdBooking.id}</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>RECEIPT #:</strong>
+                          <span>{createdBooking.receiptNo}</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>GUEST NAME:</strong>
+                          <span>{createdBooking.fullName}</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>EMAIL:</strong>
+                          <span>{createdBooking.email}</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>ROOM:</strong>
+                          <span>{createdBooking.roomName}</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>GUESTS:</strong>
+                          <span>{createdBooking.guests} Person(s)</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>CHECK-IN:</strong>
+                          <span>{createdBooking.checkIn} (2:00 PM)</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>CHECK-OUT:</strong>
+                          <span>{createdBooking.checkOut} (12:00 PM)</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1">
+                          <strong>DURATION:</strong>
+                          <span>{createdBooking.nights} Night(s)</span>
+                        </div>
+
+                        <div style={{ borderTop: "2px dashed #b0b8c1", margin: "10px 0" }}></div>
+
+                        <div className="d-flex justify-content-between py-1">
+                          <span>VATable Sales:</span>
+                          <span>{formattedVatable}</span>
+                        </div>
+                        <div className="d-flex justify-content-between py-1 text-muted">
+                          <span>12% VAT Included:</span>
+                          <span>{formattedVat}</span>
+                        </div>
+
+                        <div style={{ borderTop: "2px solid #2c3e50", marginTop: "8px", paddingTop: "8px" }}>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span style={{ fontWeight: "bold", fontSize: "16px" }}>TOTAL COST:</span>
+                            <span style={{ fontWeight: "bold", fontSize: "20px", color: "#2f4a3c" }}>{createdBooking.totalPrice}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="d-flex flex-wrap justify-content-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          className="btn btn-outline-dark rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
+                          style={{ minHeight: "44px" }}
+                        >
+                          🖨️ Print / Download Receipt
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCloseBookingModal}
+                          className="btn rounded-pill px-4 py-2 fw-bold text-white shadow-sm"
+                          style={{ backgroundColor: "#2f4a3c", border: "none", minHeight: "44px" }}
+                        >
+                          Close
                         </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </form>
+                  )
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="row justify-content-center mt-5">
           <div className="col-lg-10">
@@ -864,14 +1098,11 @@ function Reservation() {
               )}
 
               <div className="table-responsive">
-                <table className="table table-hover align-middle">
+                <table className="table table-hover align-middle table-responsive-cards mb-0">
                   <thead style={{ backgroundColor: "#2f4a3c" }}>
                     <tr>
-                      <th className="text-white">Booking ID</th>
-                      <th className="text-white">Guest Name</th>
-                      <th className="text-white">Room</th>
-                      <th className="text-white">Check-in</th>
-                      <th className="text-white">Check-out</th>
+                      <th className="text-white">Booking Details</th>
+                      <th className="text-white">Dates</th>
                       <th className="text-white">Guests</th>
                       <th className="text-white">Total</th>
                       <th className="text-white">Status</th>
@@ -881,7 +1112,7 @@ function Reservation() {
                   <tbody>
                     {allBookings.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center py-4 text-muted">
+                        <td colSpan="6" className="text-center py-4 text-muted">
                           No bookings found for this account.
                         </td>
                       </tr>
@@ -892,44 +1123,52 @@ function Reservation() {
 
                         return (
                           <tr key={b.id}>
-                            <td className="font-monospace fw-bold">{b.id}</td>
-                            <td>{b.fullName}</td>
-                            <td>{b.roomName}</td>
-                            <td>{b.checkIn}</td>
-                            <td>{b.checkOut}</td>
-                            <td>{b.guests}</td>
-                            <td className="fw-bold text-success font-monospace">{b.totalPrice}</td>
-                            <td>
-                              <span
-                                className={`badge px-3 py-1 ${
-                                  currentStatus === "Completed"
-                                    ? "bg-secondary"
-                                    : currentStatus === "Confirmed"
-                                    ? "bg-success"
-                                    : currentStatus === "Pending"
-                                    ? "bg-warning text-dark"
-                                    : "bg-danger"
-                                }`}
-                              >
-                                {currentStatus}
-                              </span>
-                              {eligibleForSelfCancel &&
-                                currentStatus !== "Cancelled" &&
-                                currentStatus !== "Completed" && (
-                                  <div className="badge bg-info text-dark mt-1" style={{ fontSize: "0.7rem" }}>
-                                    ⏱️ &lt;24h Eligible
-                                  </div>
-                                )}
+                            <td className="card-header-cell">
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span className="fw-bold fs-6" style={{ color: "#2f4a3c" }}>{b.roomName}</span>
+                                <span className="badge bg-dark font-monospace">{b.id}</span>
+                              </div>
+                              <div className="small text-muted">{b.fullName}</div>
                             </td>
-                            <td>
-                              <div className="d-flex flex-column gap-2">
+                            <td data-label="Dates" className="small">
+                              <div><strong>In:</strong> {b.checkIn} | <strong>Out:</strong> {b.checkOut}</div>
+                            </td>
+                            <td data-label="Guests">{b.guests}</td>
+                            <td data-label="Total" className="fw-bold text-success font-monospace">{b.totalPrice}</td>
+                            <td data-label="Status">
+                              <div className="d-flex flex-wrap gap-1 align-items-center">
+                                <span
+                                  className={`badge px-3 py-1 ${
+                                    currentStatus === "Completed"
+                                      ? "bg-secondary"
+                                      : currentStatus === "Confirmed"
+                                      ? "bg-success"
+                                      : currentStatus === "Pending"
+                                      ? "bg-warning text-dark"
+                                      : "bg-danger"
+                                  }`}
+                                >
+                                  {currentStatus}
+                                </span>
+                                {eligibleForSelfCancel &&
+                                  currentStatus !== "Cancelled" &&
+                                  currentStatus !== "Completed" && (
+                                    <span className="badge bg-info text-dark" style={{ fontSize: "0.7rem" }}>
+                                      ⏱️ &lt;24h Eligible
+                                    </span>
+                                  )}
+                              </div>
+                            </td>
+                            <td className="card-action-cell text-center">
+                              <div className="d-flex flex-wrap gap-2 w-100 justify-content-center">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setCreatedBooking(b);
                                     setIsReceiptOpen(true);
                                   }}
-                                  className="btn btn-sm btn-outline-success rounded-pill fw-semibold"
+                                  className="btn btn-outline-success rounded-pill fw-semibold px-3"
+                                  style={{ minHeight: "40px", flex: "1 1 auto" }}
                                 >
                                   🧾 View Receipt
                                 </button>
@@ -939,7 +1178,8 @@ function Reservation() {
                                     <button
                                       type="button"
                                       onClick={() => handleCancelBookingFromList(b)}
-                                      className="btn btn-sm btn-outline-danger rounded-pill fw-semibold"
+                                      className="btn btn-outline-danger rounded-pill fw-semibold px-3"
+                                      style={{ minHeight: "40px", flex: "1 1 auto" }}
                                     >
                                       🚫 Cancel
                                     </button>
@@ -947,14 +1187,15 @@ function Reservation() {
                                     <button
                                       type="button"
                                       onClick={() => handleCancelBookingFromList(b)}
-                                      className="btn btn-sm btn-outline-secondary rounded-pill fw-semibold"
+                                      className="btn btn-outline-secondary rounded-pill fw-semibold px-3"
+                                      style={{ minHeight: "40px", flex: "1 1 auto" }}
                                       title="More than 24h passed - Click to view Admin contact details"
                                     >
                                       🔒 Contact Admin
                                     </button>
                                   )
                                 ) : (
-                                  <span className="badge bg-light text-muted rounded-pill px-3 py-2 border">
+                                  <span className="badge bg-light text-muted rounded-pill px-3 py-2 border d-flex align-items-center justify-content-center" style={{ minHeight: "40px", flex: "1 1 auto" }}>
                                     {currentStatus === "Completed" ? "Stay Ended" : "Cancelled"}
                                   </span>
                                 )}

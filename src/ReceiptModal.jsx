@@ -47,8 +47,12 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
   const roomBaseSubtotal = pricePerNight * nights;
   const extraGuestSubtotal = extraGuestNightlyFee * nights;
   const subtotal = roomBaseSubtotal + extraGuestSubtotal;
-  const formattedTotal = `\u20B1${subtotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
-  const formattedSubtotal = `\u20B1${subtotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+  const vatIncluded = (subtotal * 12) / 112;
+  const vatableSales = subtotal - vatIncluded;
+  const formattedTotal = `\u20B1${subtotal.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedSubtotal = `\u20B1${subtotal.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedVat = `\u20B1${vatIncluded.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedVatable = `\u20B1${vatableSales.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const receiptNo = booking.receiptNo || `RCP-${booking.id || "BK-000000"}`;
   const dateIssued = booking.dateCreated
     ? new Date(booking.dateCreated).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })
@@ -133,7 +137,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
         }
       `}</style>
 
-      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ maxWidth: "480px" }}>
+      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ width: "min(95vw, 480px)", maxHeight: "90vh", margin: "1rem auto" }}>
         <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
 
           <div
@@ -301,6 +305,14 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                   <span><strong>SUBTOTAL:</strong></span>
                   <span>{formattedSubtotal}</span>
                 </div>
+                <div className="d-flex justify-content-between" style={{ padding: "2px 0", fontSize: "13px", color: "#6c757d" }}>
+                  <span>VATable Sales:</span>
+                  <span>{formattedVatable}</span>
+                </div>
+                <div className="d-flex justify-content-between" style={{ padding: "2px 0", fontSize: "13px", color: "#6c757d" }}>
+                  <span>12% VAT Included:</span>
+                  <span>{formattedVat}</span>
+                </div>
 
                 <div style={{ borderTop: "2px solid #2c3e50", marginTop: "8px", paddingTop: "8px" }}>
                   <div className="d-flex justify-content-between align-items-center">
@@ -442,14 +454,14 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                 type="button"
                 className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold flex-fill d-flex align-items-center justify-content-center gap-2"
                 onClick={handlePrint}
-                style={{ fontSize: "14px" }}
+                style={{ fontSize: "14px", minHeight: "44px" }}
               >
                 {"\uD83D\uDDA8\uFE0F"} Print Slip
               </button>
               <button
                 type="button"
-                className="btn text-white rounded-pill px-4 py-2 fw-bold flex-fill"
-                style={{ backgroundColor: "#2f4a3c", fontSize: "14px" }}
+                className="btn text-white rounded-pill px-4 py-2 fw-bold flex-fill d-flex align-items-center justify-content-center"
+                style={{ backgroundColor: "#2f4a3c", fontSize: "14px", minHeight: "44px" }}
                 onClick={onClose}
               >
                 Close
