@@ -312,6 +312,21 @@ h5, .h5 {
   }
 }
 
+@keyframes casaCheckPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* Villa & Kubo selection grid */
 .villa-selection-grid {
   display: grid;

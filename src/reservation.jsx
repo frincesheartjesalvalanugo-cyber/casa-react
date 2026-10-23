@@ -1078,6 +1078,7 @@ function Reservation() {
                             height: "68px",
                             backgroundColor: "#eafaf1",
                             border: "3px solid #198754",
+                            animation: "casaCheckPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                           }}
                         >
                           <span style={{ fontSize: "36px", color: "#198754", lineHeight: 1 }}>✓</span>
