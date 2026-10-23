@@ -22,10 +22,6 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
 
   const canSelfCancel = checkWithin24Hours();
 
-  const pricePerNight =
-    booking.pricePerNight ||
-    (booking.roomId === "villa" ? 3500 : booking.roomId === "kubo" ? 2200 : 3000);
-
   const calculateNights = () => {
     if (booking.nights) return booking.nights;
     if (booking.checkIn && booking.checkOut) {
@@ -40,13 +36,8 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
 
   const nights = calculateNights();
   const guestCount = Math.max(1, Number(booking.guests) || 1);
-  const extraGuests = Math.max(0, guestCount - 2);
-  const extraGuestRate = booking.roomId === "villa" ? 500 : 300;
-  const extraGuestNightlyFee = extraGuests * extraGuestRate;
-
-  const roomBaseSubtotal = pricePerNight * nights;
-  const extraGuestSubtotal = extraGuestNightlyFee * nights;
-  const subtotal = roomBaseSubtotal + extraGuestSubtotal;
+  const nightlySubtotal = guestCount * 1000;
+  const subtotal = nightlySubtotal * nights;
   const vatIncluded = (subtotal * 12) / 112;
   const vatableSales = subtotal - vatIncluded;
   const formattedTotal = `\u20B1${subtotal.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -276,26 +267,13 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                       <td style={{ padding: "8px 0" }}>
                         {booking.roomName}<br />
                         <span style={{ fontSize: "12px", color: "#6c757d" }}>
-                          {nights}n x {"\u20B1"}{pricePerNight.toLocaleString()}/night
+                          {guestCount} guest(s) x {"\u20B1"}1,000/night x {nights} night(s)
                         </span>
                       </td>
                       <td style={{ textAlign: "right", padding: "8px 0", fontWeight: "bold" }}>
-                        {"\u20B1"}{roomBaseSubtotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                        {"\u20B1"}{subtotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
-                    {extraGuests > 0 && (
-                      <tr style={{ borderBottom: "1px solid #eee" }}>
-                        <td style={{ padding: "8px 0" }}>
-                          Extra Guest(s)<br />
-                          <span style={{ fontSize: "12px", color: "#6c757d" }}>
-                            {extraGuests}pax x {"\u20B1"}{extraGuestRate}/night x {nights}n
-                          </span>
-                        </td>
-                        <td style={{ textAlign: "right", padding: "8px 0", fontWeight: "bold" }}>
-                          {"\u20B1"}{extraGuestSubtotal.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
 
@@ -422,9 +400,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
                     <div className="d-flex justify-content-between"><span className="text-muted">Check-in:</span><strong>{booking.checkIn} (2:00 PM)</strong></div>
                     <div className="d-flex justify-content-between"><span className="text-muted">Check-out:</span><strong>{booking.checkOut} (12:00 PM)</strong></div>
                     <div className="d-flex justify-content-between"><span className="text-muted">Duration:</span><strong>{nights} night(s)</strong></div>
-                    {extraGuests > 0 && (
-                      <div className="d-flex justify-content-between"><span className="text-muted">Extra Guests:</span><strong>{extraGuests} @ {"\u20B1"}{extraGuestRate}/night</strong></div>
-                    )}
+                    <div className="d-flex justify-content-between"><span className="text-muted">Rate:</span><strong>{guestCount} guest(s) @ {"\u20B1"}1,000/night</strong></div>
                     <hr className="my-2" />
                     <div className="d-flex justify-content-between align-items-center">
                       <span className="fw-bold">Total:</span>

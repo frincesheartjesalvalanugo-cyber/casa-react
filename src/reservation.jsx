@@ -21,38 +21,41 @@ function Reservation() {
 
   const [allBookings, setAllBookings] = useState([]);
   const [existingBookings, setExistingBookings] = useState([]);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [lookupToast, setLookupToast] = useState("");
 
   const rooms = [
-    { id: "villa-1", name: "Villa 1", unitNumber: 1, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-2", name: "Villa 2", unitNumber: 2, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-3", name: "Villa 3", unitNumber: 3, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-4", name: "Villa 4", unitNumber: 4, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
-    { id: "villa-5", name: "Villa 5", unitNumber: 5, type: "villa", typeName: "Villa Type Room", price: "₱3,500 / night", priceNum: 3500, image: "/villa-1.jpg", maxCapacity: 10 },
+    { id: "room-101", name: "Room 101", unitNumber: 101, type: "villa", typeName: "Villa Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/villa-1.jpg", maxCapacity: 6 },
+    { id: "room-102", name: "Room 102", unitNumber: 102, type: "villa", typeName: "Villa Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/villa-1.jpg", maxCapacity: 6 },
+    { id: "room-103", name: "Room 103", unitNumber: 103, type: "villa", typeName: "Villa Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/villa-1.jpg", maxCapacity: 6 },
+    { id: "room-104", name: "Room 104", unitNumber: 104, type: "villa", typeName: "Villa Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/villa-1.jpg", maxCapacity: 6 },
+    { id: "room-105", name: "Room 105", unitNumber: 105, type: "villa", typeName: "Villa Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/villa-1.jpg", maxCapacity: 6 },
+    { id: "room-106", name: "Room 106", unitNumber: 106, type: "villa", typeName: "Villa Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/villa-1.jpg", maxCapacity: 6 },
 
-    { id: "kubo-1", name: "Kubo 1", unitNumber: 1, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-2", name: "Kubo 2", unitNumber: 2, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-3", name: "Kubo 3", unitNumber: 3, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-4", name: "Kubo 4", unitNumber: 4, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
-    { id: "kubo-5", name: "Kubo 5", unitNumber: 5, type: "kubo", typeName: "Kubo Type Room", price: "₱2,200 / night", priceNum: 2200, image: "/kubo-1.jpg", maxCapacity: 6 },
+    { id: "room-107", name: "Room 107", unitNumber: 107, type: "kubo", typeName: "Kubo Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/kubo-1.jpg", maxCapacity: 3 },
+    { id: "room-108", name: "Room 108", unitNumber: 108, type: "kubo", typeName: "Kubo Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/kubo-1.jpg", maxCapacity: 3 },
+    { id: "room-109", name: "Room 109", unitNumber: 109, type: "kubo", typeName: "Kubo Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/kubo-1.jpg", maxCapacity: 3 },
+    { id: "room-110", name: "Room 110", unitNumber: 110, type: "kubo", typeName: "Kubo Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/kubo-1.jpg", maxCapacity: 3 },
+    { id: "room-111", name: "Room 111", unitNumber: 111, type: "kubo", typeName: "Kubo Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/kubo-1.jpg", maxCapacity: 3 },
+    { id: "room-112", name: "Room 112", unitNumber: 112, type: "kubo", typeName: "Kubo Type Room", price: "₱1,000 / person / night", priceNum: 1000, image: "/kubo-1.jpg", maxCapacity: 3 },
   ];
 
   const categories = [
     {
       id: "villa",
       name: "Villa Type Room",
-      price: "₱3,500 / night",
+      price: "₱1,000 / person / night",
       image: "/villa-1.jpg",
-      description: "Spacious air-conditioned rooms designed for family comfort (up to 10 guests).",
-      maxCapacity: 10,
+      description: "Spacious air-conditioned rooms designed for family comfort (up to 6 guests).",
+      maxCapacity: 6,
     },
     {
       id: "kubo",
       name: "Kubo Type Room",
-      price: "₱2,200 / night",
+      price: "₱1,000 / person / night",
       image: "/kubo-1.jpg",
-      description: "Cozy tropical kubo experience surrounded by natural breeze (up to 6 guests).",
-      maxCapacity: 6,
+      description: "Cozy tropical kubo experience surrounded by natural breeze (up to 3 guests).",
+      maxCapacity: 3,
     },
   ];
 
@@ -77,6 +80,7 @@ function Reservation() {
   };
 
   const fetchExistingBookings = async () => {
+    setIsCheckingAvailability(true);
     try {
       const res = await fetch(`${API_URL}/api/bookings`);
       if (res.ok) {
@@ -88,6 +92,8 @@ function Reservation() {
       }
     } catch (err) {
       console.warn("Could not fetch remote bookings:", err);
+    } finally {
+      setIsCheckingAvailability(false);
     }
     try {
       const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
@@ -294,11 +300,11 @@ function Reservation() {
     }
   }, [checkIn, checkOut, existingBookings, isBookingModalOpen, activeCategory]);
 
-  const roomMaxCapacity = selectedRoom?.maxCapacity || (selectedRoom?.type === "villa" ? 10 : 6);
+  const roomMaxCapacity = selectedRoom?.maxCapacity || (selectedRoom?.type === "villa" || activeCategory === "villa" ? 6 : 3);
 
   useEffect(() => {
     if (selectedRoom) {
-      const maxCap = selectedRoom.maxCapacity || (selectedRoom.type === "villa" ? 10 : 6);
+      const maxCap = selectedRoom.maxCapacity || (selectedRoom.type === "villa" ? 6 : 3);
       if (Number(guests) > maxCap) {
         setGuests(maxCap);
       }
@@ -382,16 +388,11 @@ function Reservation() {
   };
 
   const nightsCount = calculateNights();
-  const basePricePerNight = selectedRoom ? selectedRoom.priceNum : 0;
   const effectiveNights = nightsCount > 0 ? nightsCount : 1;
   const guestCount = Math.max(1, Math.min(roomMaxCapacity, Number(guests) || 1));
-
-  const extraGuestRate = selectedRoom?.type === "villa" ? 500 : 300;
-  const extraGuests = Math.max(0, guestCount - 2);
-  const extraGuestFeePerNight = extraGuests * extraGuestRate;
-  const totalDailyRate = basePricePerNight + extraGuestFeePerNight;
-
-  const calculatedTotal = totalDailyRate * effectiveNights;
+  const RATE_PER_PERSON = 1000;
+  const nightlySubtotal = guestCount * RATE_PER_PERSON;
+  const calculatedTotal = nightlySubtotal * effectiveNights;
   const vatIncluded = (calculatedTotal * 12) / 112;
   const vatableSales = calculatedTotal - vatIncluded;
   const formattedVat = `₱${vatIncluded.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -405,7 +406,7 @@ function Reservation() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!selectedRoom) {
-      setConfirmation("error:Please select a unit number before confirming your reservation.");
+      setConfirmation("error:Please select a room number before confirming your reservation.");
       return;
     }
 
@@ -475,12 +476,20 @@ function Reservation() {
           checkIn: checkIn,
           checkOut: checkOut,
           guests: guestCount,
+          pricePerNight: nightlySubtotal,
           totalPrice: `₱${calculatedTotal.toLocaleString()}`,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
+        let errMessage = `Server returned HTTP ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.message) {
+            errMessage = errData.message;
+          }
+        } catch (_) {}
+        throw new Error(errMessage);
       }
 
       const savedData = await response.json();
@@ -503,7 +512,7 @@ function Reservation() {
         checkIn: checkIn,
         checkOut: checkOut,
         guests: guestCount,
-        pricePerNight: basePricePerNight,
+        pricePerNight: nightlySubtotal,
         nights: effectiveNights,
         totalPrice: `₱${calculatedTotal.toLocaleString()}`,
         status: savedData?.status || "Confirmed",
@@ -525,15 +534,22 @@ function Reservation() {
       setCreatedBooking(newBookingRecord);
       setModalStep("success");
       loadAllBookings(trimmedEmail);
+      await fetchExistingBookings();
     } catch (err) {
       console.error("Booking reservation error:", err);
       const elapsed = Date.now() - startTime;
       if (elapsed < 1200) {
         await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed));
       }
-      setConfirmation(
-        "error:The booking server did not respond. Please ensure the backend is running and try again."
-      );
+      const rawMsg = err.message || "";
+      if (rawMsg.includes("already reserved") || rawMsg.includes("409")) {
+        setConfirmation(`error:${rawMsg}`);
+        fetchExistingBookings();
+      } else {
+        setConfirmation(
+          "error:The booking server did not respond. Please ensure the backend is running and try again."
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -714,12 +730,10 @@ function Reservation() {
                         {/* Form (Left Column on Laptop, Full Width on Mobile) */}
                         <div className="col-12 col-md-7">
                           <div className="row g-3">
-                            {/* Unit-Number Selector */}
+                            {/* Room Number Selector */}
                             <div className="col-12">
                               <label className="form-label small fw-semibold d-block mb-2" style={{ color: "#2f4a3c" }}>
-                                {selectedRoom?.type === "villa" || activeCategory === "villa"
-                                  ? "Choose Villa Number"
-                                  : "Choose Kubo Number"}
+                                Choose Room Number
                               </label>
                               <div className="d-flex flex-wrap gap-2">
                                 {rooms
@@ -739,38 +753,77 @@ function Reservation() {
                                           backgroundColor: isSelected
                                             ? "#2f4a3c"
                                             : isBooked
-                                            ? "#e9ecef"
+                                            ? "#fdecea"
                                             : "#ffffff",
                                           color: isSelected
                                             ? "#ffffff"
                                             : isBooked
-                                            ? "#6c757d"
+                                            ? "#c0392b"
                                             : "#2f4a3c",
                                           border: isSelected
                                             ? "2px solid #2f4a3c"
                                             : isBooked
-                                            ? "1px solid #ced4da"
+                                            ? "1.5px solid #c0392b"
                                             : "1.5px solid #2f4a3c",
                                           cursor: isBooked ? "not-allowed" : "pointer",
                                           fontSize: "0.88rem",
                                           transition: "all 0.15s ease",
                                         }}
                                       >
-                                        {unit.name} {isBooked ? "(Booked)" : ""}
+                                        <span>{unit.name}</span>
+                                        {isBooked && (
+                                          <span
+                                            className="badge ms-1"
+                                            style={{
+                                              backgroundColor: "#c0392b",
+                                              color: "#ffffff",
+                                              fontSize: "0.7rem",
+                                              padding: "2px 6px",
+                                              borderRadius: "12px",
+                                            }}
+                                          >
+                                            Reserved
+                                          </span>
+                                        )}
                                       </button>
                                     );
                                   })}
                               </div>
+
+                              {/* Legend below pills */}
+                              <div className="d-flex flex-wrap align-items-center gap-3 mt-2 pt-1" style={{ fontSize: "0.75rem", color: "#555" }}>
+                                <div className="d-flex align-items-center gap-1">
+                                  <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: "#2f4a3c", display: "inline-block" }}></span>
+                                  <span>Selected</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-1">
+                                  <span style={{ width: 12, height: 12, borderRadius: 3, border: "1.5px solid #2f4a3c", backgroundColor: "#fff", display: "inline-block" }}></span>
+                                  <span>Available</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-1">
+                                  <span style={{ width: 12, height: 12, borderRadius: 3, border: "1.5px solid #c0392b", backgroundColor: "#fdecea", display: "inline-block" }}></span>
+                                  <span>Reserved</span>
+                                </div>
+                                {isCheckingAvailability && (
+                                  <div className="d-flex align-items-center gap-1 text-muted ms-auto">
+                                    <span className="spinner-border spinner-border-sm" style={{ width: "0.75rem", height: "0.75rem" }} role="status"></span>
+                                    <span>Checking availability...</span>
+                                  </div>
+                                )}
+                              </div>
+
                               {checkIn &&
                                 checkOut &&
                                 rooms
                                   .filter((r) => r.type === (selectedRoom?.type || activeCategory || "villa"))
                                   .every((u) => isUnitBooked(u, checkIn, checkOut)) && (
-                                  <div className="alert alert-warning py-2 px-3 small mt-2 mb-0 d-flex align-items-center gap-2" role="alert">
+                                  <div
+                                    className="alert alert-danger py-2 px-3 small mt-2 mb-0 d-flex align-items-center gap-2"
+                                    style={{ backgroundColor: "#fdecea", borderColor: "#c0392b", color: "#c0392b" }}
+                                    role="alert"
+                                  >
                                     <span>⚠️</span>
-                                    <span>
-                                      All {selectedRoom?.type === "villa" || activeCategory === "villa" ? "Villa" : "Kubo"} units are booked for the selected dates. Please choose different dates.
-                                    </span>
+                                    <span>All rooms are reserved for these dates. Please choose different dates.</span>
                                   </div>
                                 )}
                             </div>
@@ -849,7 +902,7 @@ function Reservation() {
                                 required
                               />
                               <small className="text-muted d-block mt-1" style={{ fontSize: "0.8rem" }}>
-                                Base rate includes up to 2 persons. Extra persons: +₱{extraGuestRate}/night each (up to {roomMaxCapacity} guests max).
+                                ₱1,000 per person per night (Villa up to 6 persons, Kubo up to 3 persons)
                               </small>
                             </div>
                           </div>
@@ -876,19 +929,13 @@ function Reservation() {
                                     <strong className="text-dark">{selectedRoom.name} ({selectedRoom.typeName})</strong>
                                   </div>
                                   <div className="d-flex justify-content-between align-items-center mb-2 small">
-                                    <span className="text-muted">Base Rate (2 Guests):</span>
-                                    <strong>₱{basePricePerNight.toLocaleString()} / night</strong>
+                                    <span className="text-muted">Rate per person:</span>
+                                    <strong>₱1,000 / night</strong>
                                   </div>
                                   <div className="d-flex justify-content-between align-items-center mb-2 small">
                                     <span className="text-muted">Guests Checking In:</span>
                                     <strong>{guestCount} Person(s)</strong>
                                   </div>
-                                  {extraGuests > 0 && (
-                                    <div className="d-flex justify-content-between align-items-center mb-2 small text-primary">
-                                      <span>Extra Guests ({extraGuests}x):</span>
-                                      <strong>+₱{extraGuestFeePerNight.toLocaleString()} / night</strong>
-                                    </div>
-                                  )}
                                   <div className="d-flex justify-content-between align-items-center mb-2 small">
                                     <span className="text-muted">Days / Nights Staying:</span>
                                     <strong>{nightsCount > 0 ? `${nightsCount} Night(s)` : "Please set dates"}</strong>
@@ -897,7 +944,7 @@ function Reservation() {
                                   <hr className="my-2" />
                                   <div className="d-flex justify-content-between align-items-center mb-2 small">
                                     <span className="text-muted">Nightly Subtotal:</span>
-                                    <span className="font-monospace">₱{totalDailyRate.toLocaleString()} / night</span>
+                                    <span className="font-monospace">₱{nightlySubtotal.toLocaleString()} / night</span>
                                   </div>
                                   <div className="d-flex justify-content-between align-items-center mb-2 small">
                                     <span className="text-muted">Grand Subtotal ({effectiveNights} night{effectiveNights > 1 ? "s" : ""}):</span>

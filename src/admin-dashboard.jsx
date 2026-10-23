@@ -229,7 +229,6 @@ function AdminDashboard() {
       return;
     }
 
-    const basePricePerNight = newBookingRoom === "villa" ? 3500 : 2200;
     const nightCount =
       Math.max(
         1,
@@ -239,9 +238,7 @@ function AdminDashboard() {
       ) || 1;
 
     const guestCount = Math.max(1, Number(newBookingGuests) || 1);
-    const extraGuestRate = newBookingRoom === "villa" ? 500 : 300;
-    const extraGuests = Math.max(0, guestCount - 2);
-    const totalDailyRate = basePricePerNight + extraGuests * extraGuestRate;
+    const totalDailyRate = guestCount * 1000;
     const total = nightCount * totalDailyRate;
 
     const bookingId = `BK-${Date.now().toString().slice(-6)}`;
@@ -257,7 +254,7 @@ function AdminDashboard() {
       checkIn: newBookingCheckIn,
       checkOut: newBookingCheckOut,
       guests: guestCount,
-      pricePerNight: basePricePerNight,
+      pricePerNight: totalDailyRate,
       nights: nightCount,
       subtotal: total,
       totalPrice: `₱${total.toLocaleString()}`,
@@ -331,8 +328,8 @@ function AdminDashboard() {
       return sum + numeric;
     }, 0);
 
-  const VILLA_TOTAL = 3;
-  const KUBO_TOTAL = 5;
+  const VILLA_TOTAL = 6;
+  const KUBO_TOTAL = 6;
   const villaOccupied = bookings.filter((b) => b.roomId === "villa" && (b.status === "Confirmed" || b.status === "Pending")).length;
   const villaAvailable = Math.max(0, VILLA_TOTAL - villaOccupied);
   const kuboOccupied = bookings.filter((b) => b.roomId === "kubo" && (b.status === "Confirmed" || b.status === "Pending")).length;
@@ -1082,7 +1079,7 @@ function AdminDashboard() {
                   <div className="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
                     <div>
                       <span className="small text-muted">Price Rate</span>
-                      <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱3,500 / night</h5>
+                      <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱1,000 / person / night</h5>
                     </div>
                     <span className="badge bg-light text-dark p-2 border">
                       {bookings.filter((b) => b.roomId === "villa" && b.status === "Confirmed").length} Confirmed
@@ -1128,7 +1125,7 @@ function AdminDashboard() {
                   <div className="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
                     <div>
                       <span className="small text-muted">Price Rate</span>
-                      <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱2,200 / night</h5>
+                      <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱1,000 / person / night</h5>
                     </div>
                     <span className="badge bg-light text-dark p-2 border">
                       {bookings.filter((b) => b.roomId === "kubo" && b.status === "Confirmed").length} Confirmed
@@ -1284,8 +1281,8 @@ function AdminDashboard() {
                       onChange={(e) => setNewBookingRoom(e.target.value)}
                       style={{ minHeight: "44px" }}
                     >
-                      <option value="villa">Villa Type Room (₱3,500/night)</option>
-                      <option value="kubo">Kubo Type Room (₱2,200/night)</option>
+                      <option value="villa">Villa Type Room (₱1,000/person/night)</option>
+                      <option value="kubo">Kubo Type Room (₱1,000/person/night)</option>
                     </select>
                   </div>
                   <div className="col-12 col-md-6">
