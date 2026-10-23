@@ -376,3 +376,20 @@ input[type="number"]::-webkit-outer-spin-button {
   display: block !important;
 }
 
+/* Password Visibility Toggle Button */
+.btn-toggle-password {
+  color: #7a8a6f;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  transition: color 0.15s ease;
+}
+.btn-toggle-password:hover,
+.btn-toggle-password:focus,
+.btn-toggle-password:active {
+  color: #2f4a3c !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+
