@@ -52,7 +52,36 @@ export default function StudiosTable() {
       }
 
       const data = await response.json();
-      setBookings(Array.isArray(data) ? data : []);
+      const validList = Array.isArray(data) ? data : [];
+      setBookings(validList);
+      try {
+        const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
+        const map = new Map();
+        validList.forEach((b) => {
+          const id = String(b.id);
+          map.set(id, {
+            id: id,
+            receiptNo: b.receiptNo || `RCP-BK-${id}`,
+            fullName: b.fullName || "Guest",
+            email: b.email || "guest@casagracias.com",
+            roomName: b.roomName || "Villa Suite",
+            roomId: b.roomId || "villa",
+            checkIn: b.checkIn || "",
+            checkOut: b.checkOut || b.checkIn || "",
+            guests: Number(b.guests) || 2,
+            pricePerNight: Number(b.pricePerNight) || 2000,
+            totalPrice: b.totalPrice || "₱2,000",
+            status: b.status || "Confirmed",
+            dateCreated: b.dateCreated || new Date().toISOString(),
+          });
+        });
+        local.forEach((b) => {
+          if (!map.has(String(b.id))) {
+            map.set(String(b.id), b);
+          }
+        });
+        localStorage.setItem("casa_bookings", JSON.stringify(Array.from(map.values())));
+      } catch (_) {}
     } catch (err) {
       clearTimeout(timeoutId);
       console.warn("Error fetching admin bookings:", err);

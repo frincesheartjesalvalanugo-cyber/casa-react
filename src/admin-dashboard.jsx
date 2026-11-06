@@ -5,6 +5,7 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import { isAuthorizedAdmin, getStoredSessionUser } from "./authUtils";
+import { API_URL } from "./config";
 
 function AdminDashboard() {
   const [authChecking, setAuthChecking] = useState(true);
@@ -132,6 +133,55 @@ function AdminDashboard() {
       setBookings([]);
       localStorage.setItem("casa_bookings", JSON.stringify([]));
     }
+
+    // Sync bookings from backend API (MySQL via server.js)
+    const syncBackendBookings = async () => {
+      const endpoint = API_URL ? `${API_URL}/api/bookings` : "/api/bookings";
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(endpoint, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const apiList = await res.json();
+          if (Array.isArray(apiList) && apiList.length > 0) {
+            setBookings((prev) => {
+              const map = new Map();
+              apiList.forEach((b) => {
+                const id = String(b.id);
+                map.set(id, {
+                  id: id,
+                  receiptNo: b.receiptNo || `RCP-BK-${id}`,
+                  fullName: b.fullName || "Guest",
+                  email: b.email || "guest@casagracias.com",
+                  roomName: b.roomName || "Villa Suite",
+                  roomId: b.roomId || "villa",
+                  checkIn: b.checkIn || "",
+                  checkOut: b.checkOut || b.checkIn || "",
+                  guests: Number(b.guests) || 2,
+                  pricePerNight: Number(b.pricePerNight) || 2000,
+                  totalPrice: b.totalPrice || "₱2,000",
+                  status: b.status || "Confirmed",
+                  dateCreated: b.dateCreated || new Date().toISOString(),
+                });
+              });
+              prev.forEach((b) => {
+                if (!map.has(String(b.id))) {
+                  map.set(String(b.id), b);
+                }
+              });
+              const merged = Array.from(map.values());
+              localStorage.setItem("casa_bookings", JSON.stringify(merged));
+              return merged;
+            });
+          }
+        }
+      } catch (err) {
+        // Backend not reachable, will rely on localStorage & Firestore
+      }
+    };
+
+    syncBackendBookings();
 
     // Sync bookings and users from Firestore (e.g. reservations submitted from mobile on Netlify)
     const syncCloudData = async () => {
