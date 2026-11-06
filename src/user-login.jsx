@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { auth, db } from "./firebase";
-import { signInWithGoogle, isInAppBrowser } from "./authUtils";
+import { signInWithGoogle, isInAppBrowser, isAuthorizedAdminEmail } from "./authUtils";
 import { 
   doc, 
   getDoc, 
@@ -29,7 +29,7 @@ function UserLogin() {
     let role = "user";
     const cleanEmail = (userEmail || "").trim().toLowerCase();
 
-    if (cleanEmail === "admin@casagracias.com") {
+    if (isAuthorizedAdminEmail(cleanEmail) || cleanEmail === "admin@casagracias.com") {
       role = "admin";
     } else {
       try {

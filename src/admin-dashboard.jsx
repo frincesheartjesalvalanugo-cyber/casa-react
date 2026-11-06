@@ -3,7 +3,7 @@ import ReceiptModal from "./ReceiptModal.jsx";
 import StudiosTable from "./StudiosTable.jsx";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import { isAuthorizedAdmin, getStoredSessionUser } from "./authUtils";
 
 function AdminDashboard() {
@@ -132,6 +132,61 @@ function AdminDashboard() {
       setBookings([]);
       localStorage.setItem("casa_bookings", JSON.stringify([]));
     }
+
+    // Sync bookings and users from Firestore (e.g. reservations submitted from mobile on Netlify)
+    const syncCloudData = async () => {
+      try {
+        const bookingsSnap = await getDocs(collection(db, "bookings"));
+        if (!bookingsSnap.empty) {
+          const cloudBookings = bookingsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setBookings((prev) => {
+            const map = new Map();
+            prev.forEach((b) => map.set(String(b.id), b));
+            cloudBookings.forEach((b) => {
+              if (!map.has(String(b.id))) {
+                map.set(String(b.id), b);
+              }
+            });
+            const merged = Array.from(map.values());
+            localStorage.setItem("casa_bookings", JSON.stringify(merged));
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.warn("Could not sync cloud bookings:", err);
+      }
+
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        if (!usersSnap.empty) {
+          const cloudUsers = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setUsers((prev) => {
+            const map = new Map();
+            prev.forEach((u) => map.set(String(u.id || u.email), u));
+            cloudUsers.forEach((u) => {
+              const key = String(u.id || u.email);
+              if (!map.has(key)) {
+                map.set(key, {
+                  id: u.id,
+                  name: u.name || (u.email ? u.email.split("@")[0] : "User"),
+                  email: u.email || "",
+                  role: u.role || "Guest",
+                  dateRegistered: u.createdAt ? new Date(u.createdAt.seconds ? u.createdAt.seconds * 1000 : u.createdAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+                  status: u.status || "Active",
+                });
+              }
+            });
+            const merged = Array.from(map.values());
+            localStorage.setItem("casa_registered_users", JSON.stringify(merged));
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.warn("Could not sync cloud users:", err);
+      }
+    };
+
+    syncCloudData();
   }, []);
 
   const showToast = (msg) => {
@@ -206,6 +261,9 @@ function AdminDashboard() {
       return b;
     });
     updateBookings(updated);
+    try {
+      updateDoc(doc(db, "bookings", String(bookingId)), { status: newStatus }).catch(() => {});
+    } catch (_) {}
     showToast(`Booking ${bookingId} status updated to ${newStatus}`);
   };
 
@@ -213,6 +271,9 @@ function AdminDashboard() {
     if (window.confirm(`Are you sure you want to remove booking ${bookingId}?`)) {
       const updated = bookings.filter((b) => b.id !== bookingId);
       updateBookings(updated);
+      try {
+        deleteDoc(doc(db, "bookings", String(bookingId))).catch(() => {});
+      } catch (_) {}
       showToast(`Booking ${bookingId} removed.`);
     }
   };
@@ -290,41 +351,53 @@ function AdminDashboard() {
   };
 
   const filteredBookings = bookings.filter((b) => {
+    const bName = b?.fullName || "";
+    const bEmail = b?.email || "";
+    const bId = String(b?.id || "");
+    const bRoom = b?.roomName || "";
+    const bStatus = b?.status || "Confirmed";
+
     const matchesSearch =
-      b.fullName.toLowerCase().includes(bookingSearch.toLowerCase()) ||
-      b.email.toLowerCase().includes(bookingSearch.toLowerCase()) ||
-      b.id.toLowerCase().includes(bookingSearch.toLowerCase()) ||
-      b.roomName.toLowerCase().includes(bookingSearch.toLowerCase());
+      bName.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+      bEmail.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+      bId.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+      bRoom.toLowerCase().includes(bookingSearch.toLowerCase());
 
     const matchesStatus =
-      bookingStatusFilter === "All" ? true : b.status.toLowerCase() === bookingStatusFilter.toLowerCase();
+      bookingStatusFilter === "All" ? true : bStatus.toLowerCase() === bookingStatusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
 
   const filteredUsers = users.filter((u) => {
+    const uName = u?.name || "";
+    const uEmail = u?.email || "";
+    const uId = String(u?.id || "");
+    const uStatus = u?.status || "Active";
+
     const matchesSearch =
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.id.toLowerCase().includes(userSearch.toLowerCase());
+      uName.toLowerCase().includes(userSearch.toLowerCase()) ||
+      uEmail.toLowerCase().includes(userSearch.toLowerCase()) ||
+      uId.toLowerCase().includes(userSearch.toLowerCase());
 
     const matchesStatus =
-      userStatusFilter === "All" ? true : u.status.toLowerCase() === userStatusFilter.toLowerCase();
+      userStatusFilter === "All" ? true : uStatus.toLowerCase() === userStatusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
 
   const totalUsersCount = users.length;
-  const activeUsersCount = users.filter((u) => u.status === "Active").length;
+  const activeUsersCount = users.filter((u) => u?.status === "Active").length;
   const totalBookingsCount = bookings.length;
-  const confirmedBookingsCount = bookings.filter((b) => b.status === "Confirmed").length;
-  const pendingBookingsCount = bookings.filter((b) => b.status === "Pending").length;
-  const cancelledBookingsCount = bookings.filter((b) => b.status === "Cancelled").length;
+  const confirmedBookingsCount = bookings.filter((b) => b?.status === "Confirmed").length;
+  const pendingBookingsCount = bookings.filter((b) => b?.status === "Pending").length;
+  const cancelledBookingsCount = bookings.filter((b) => b?.status === "Cancelled").length;
 
   const totalEstRevenue = bookings
-    .filter((b) => b.status === "Confirmed")
+    .filter((b) => b?.status === "Confirmed")
     .reduce((sum, b) => {
-      const numeric = parseInt(b.totalPrice.replace(/[^0-9]/g, "")) || 0;
+      const priceStr = String(b?.totalPrice || b?.subtotal || "0");
+      const numeric = parseInt(priceStr.replace(/[^0-9]/g, ""), 10) || 0;
       return sum + numeric;
     }, 0);
 
@@ -336,12 +409,12 @@ function AdminDashboard() {
   const kuboAvailable = Math.max(0, KUBO_TOTAL - kuboOccupied);
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const cancelledBookingsList = bookings.filter((b) => b.status === "Cancelled");
+  const cancelledBookingsList = bookings.filter((b) => b?.status === "Cancelled");
   const ongoingBookingsList = bookings.filter(
-    (b) => b.status !== "Cancelled" && b.checkOut >= todayStr
+    (b) => b?.status !== "Cancelled" && (b?.checkOut || "") >= todayStr
   );
   const completedBookingsList = bookings.filter(
-    (b) => b.status !== "Cancelled" && b.checkOut < todayStr
+    (b) => b?.status !== "Cancelled" && Boolean(b?.checkOut && b.checkOut < todayStr)
   );
 
   const toggleHistorySection = (key) => {
@@ -958,7 +1031,7 @@ function AdminDashboard() {
                   </thead>
                   <tbody>
                     {filteredUsers.map((u) => {
-                      const userBookingsCount = bookings.filter((b) => b.email.toLowerCase() === u.email.toLowerCase()).length;
+                      const userBookingsCount = bookings.filter((b) => (b?.email || "").toLowerCase() === (u?.email || "").toLowerCase()).length;
                       return (
                         <tr key={u.id}>
                           <td className="card-header-cell">

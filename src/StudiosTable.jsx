@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { isAuthorizedAdmin, getStoredSessionUser, ADMIN_AUTH_SECRET } from "./authUtils";
 import { API_URL } from "./config";
 
@@ -56,14 +56,25 @@ export default function StudiosTable() {
     } catch (err) {
       clearTimeout(timeoutId);
       console.warn("Error fetching admin bookings:", err);
-      setErrorMessage(err.name === "AbortError" ? "Backend connection timed out." : (err.message || "Failed to load bookings from backend."));
-      // Fallback to local storage if remote backend is asleep/offline
+      // Fallback to local storage & Firestore cloud storage
       try {
         const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
-        if (local.length > 0) {
-          setBookings(local);
+        let combined = [...local];
+        try {
+          const fsSnap = await getDocs(collection(db, "bookings"));
+          if (!fsSnap.empty) {
+            const fsList = fsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            for (const fb of fsList) {
+              if (!combined.some((c) => String(c.id) === String(fb.id))) {
+                combined.push(fb);
+              }
+            }
+          }
+        } catch (_) {}
+        if (combined.length > 0) {
+          setBookings(combined);
         }
-      } catch {
+      } catch (_) {
         // ignore
       }
     } finally {

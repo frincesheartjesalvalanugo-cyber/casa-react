@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ReceiptModal from "./ReceiptModal.jsx";
 import { API_URL } from "./config.js";
+import { db } from "./firebase";
+import { doc, setDoc, collection, getDocs, serverTimestamp } from "firebase/firestore";
 
 function Reservation() {
   const [activeCategory, setActiveCategory] = useState("villa"); 
@@ -81,31 +83,61 @@ function Reservation() {
 
   const fetchExistingBookings = async () => {
     setIsCheckingAvailability(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    let remoteList = null;
+
+    if (API_URL) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      try {
+        const res = await fetch(`${API_URL}/api/bookings`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            remoteList = data;
+          }
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.warn("Backend API not reachable (falling back to cloud/local bookings):", err);
+      }
+    }
+
+    // Merge with Firebase Firestore for online multi-device visibility
+    try {
+      const qSnap = await getDocs(collection(db, "bookings"));
+      if (!qSnap.empty) {
+        const fsBookings = qSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const base = remoteList || [];
+        const merged = [...base];
+        for (const fb of fsBookings) {
+          if (!merged.some((m) => String(m.id) === String(fb.id))) {
+            merged.push(fb);
+          }
+        }
+        remoteList = merged;
+      }
+    } catch (fsErr) {
+      // ignore
+    }
 
     try {
-      const res = await fetch(`${API_URL}/api/bookings`, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setExistingBookings(data);
-          return data;
+      const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
+      const base = remoteList || [];
+      const combined = [...base];
+      for (const item of local) {
+        if (!combined.some((c) => String(c.id) === String(item.id))) {
+          combined.push(item);
         }
       }
-    } catch (err) {
-      clearTimeout(timeoutId);
-      console.warn("Could not fetch remote bookings:", err);
+      setExistingBookings(combined);
+      return combined;
+    } catch {
+      setExistingBookings(remoteList || []);
+      return remoteList || [];
     } finally {
       setIsCheckingAvailability(false);
-    }
-    try {
-      const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
-      setExistingBookings(local);
-      return local;
-    } catch {
-      return [];
     }
   };
 
@@ -466,98 +498,124 @@ function Reservation() {
     const startTime = Date.now();
     setIsSubmitting(true);
     setConfirmation("");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-    try {
-      const response = await fetch(`${API_URL}/api/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: trimmedName,
-          email: trimmedEmail,
-          roomName: `${selectedRoom.name} (${selectedRoom.typeName})`,
-          roomId: selectedRoom.type,
-          roomUnitId: selectedRoom.id,
-          unitNumber: selectedRoom.unitNumber,
-          checkIn: checkIn,
-          checkOut: checkOut,
-          guests: guestCount,
-          pricePerNight: nightlySubtotal,
-          totalPrice: `₱${calculatedTotal.toLocaleString()}`,
-        }),
-      });
+    let savedData = null;
 
-      if (!response.ok) {
-        let errMessage = `Server returned HTTP ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData && errData.message) {
-            errMessage = errData.message;
-          }
-        } catch (_) {}
-        throw new Error(errMessage);
-      }
-
-      const savedData = await response.json();
-
-      // Ensure visible loading state of at least 1.2s
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 1200) {
-        await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed));
-      }
-
-      const newBookingRecord = {
-        id: String(savedData?.id || `BK-${Date.now().toString().slice(-6)}`),
-        receiptNo: savedData?.receiptNo || `RCP-${savedData?.id || Date.now().toString().slice(-6)}`,
-        fullName: trimmedName,
-        email: trimmedEmail,
-        roomName: `${selectedRoom.name} (${selectedRoom.typeName})`,
-        roomId: selectedRoom.type,
-        roomUnitId: selectedRoom.id,
-        unitNumber: selectedRoom.unitNumber,
-        checkIn: checkIn,
-        checkOut: checkOut,
-        guests: guestCount,
-        pricePerNight: nightlySubtotal,
-        nights: effectiveNights,
-        totalPrice: `₱${calculatedTotal.toLocaleString()}`,
-        status: savedData?.status || "Confirmed",
-        dateCreated: savedData?.dateCreated || new Date().toISOString(),
-        createdAtMs: Date.now(),
-      };
-
+    if (API_URL) {
       try {
-        const savedBookings = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
-        const updatedBookings = [
-          newBookingRecord,
-          ...savedBookings.filter((b) => String(b.id) !== String(newBookingRecord.id)),
-        ];
-        localStorage.setItem("casa_bookings", JSON.stringify(updatedBookings));
-      } catch (storageErr) {
-        console.warn("Could not sync booking to localStorage:", storageErr);
-      }
+        const response = await fetch(`${API_URL}/api/bookings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            fullName: trimmedName,
+            email: trimmedEmail,
+            roomName: `${selectedRoom.name} (${selectedRoom.typeName})`,
+            roomId: selectedRoom.type,
+            roomUnitId: selectedRoom.id,
+            unitNumber: selectedRoom.unitNumber,
+            checkIn: checkIn,
+            checkOut: checkOut,
+            guests: guestCount,
+            pricePerNight: nightlySubtotal,
+            totalPrice: `₱${calculatedTotal.toLocaleString()}`,
+          }),
+        });
+        clearTimeout(timeoutId);
 
-      setCreatedBooking(newBookingRecord);
-      setModalStep("success");
-      loadAllBookings(trimmedEmail);
-      await fetchExistingBookings();
-    } catch (err) {
-      console.error("Booking reservation error:", err);
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 1200) {
-        await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed));
+        if (response.ok) {
+          savedData = await response.json();
+        } else if (response.status === 409) {
+          const errData = await response.json().catch(() => ({}));
+          setConfirmation(`error:${errData.message || "This room is already reserved for the selected dates."}`);
+          fetchExistingBookings();
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.warn("Backend server not reachable from this device/network. Completing reservation via cloud/local storage:", err);
       }
-      const rawMsg = err.message || "";
-      if (rawMsg.includes("already reserved") || rawMsg.includes("409")) {
-        setConfirmation(`error:${rawMsg}`);
-        fetchExistingBookings();
-      } else {
-        setConfirmation(
-          "error:The booking server did not respond. Please ensure the backend is running and try again."
-        );
-      }
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      clearTimeout(timeoutId);
     }
+
+    // Ensure smooth loading feedback
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 800) {
+      await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
+    }
+
+    const bookingId = String(savedData?.id || `BK-${Date.now().toString().slice(-6)}`);
+    const receiptNo = savedData?.receiptNo || `RCP-${bookingId}`;
+
+    const newBookingRecord = {
+      id: bookingId,
+      receiptNo: receiptNo,
+      fullName: trimmedName,
+      email: trimmedEmail,
+      roomName: `${selectedRoom.name} (${selectedRoom.typeName})`,
+      roomId: selectedRoom.type,
+      roomUnitId: selectedRoom.id,
+      unitNumber: selectedRoom.unitNumber,
+      checkIn: checkIn,
+      checkOut: checkOut,
+      guests: guestCount,
+      pricePerNight: nightlySubtotal,
+      nights: effectiveNights,
+      totalPrice: `₱${calculatedTotal.toLocaleString()}`,
+      status: savedData?.status || "Confirmed",
+      dateCreated: savedData?.dateCreated || new Date().toISOString(),
+      createdAtMs: Date.now(),
+    };
+
+    // Save to local device storage
+    try {
+      const savedBookings = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
+      const updatedBookings = [
+        newBookingRecord,
+        ...savedBookings.filter((b) => String(b.id) !== String(newBookingRecord.id)),
+      ];
+      localStorage.setItem("casa_bookings", JSON.stringify(updatedBookings));
+    } catch (storageErr) {
+      console.warn("Could not sync booking to localStorage:", storageErr);
+    }
+
+    // Sync to Firebase Cloud Firestore for multi-device persistence
+    try {
+      await setDoc(doc(db, "bookings", newBookingRecord.id), {
+        ...newBookingRecord,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (firestoreErr) {
+      console.warn("Firestore cloud booking sync notice:", firestoreErr);
+    }
+
+    // Auto-register user in directory if not present
+    try {
+      const existingUsers = JSON.parse(localStorage.getItem("casa_registered_users") || "[]");
+      if (!existingUsers.some((u) => u.email?.toLowerCase() === trimmedEmail.toLowerCase())) {
+        existingUsers.unshift({
+          id: `USR-${Math.floor(100 + Math.random() * 900)}`,
+          name: trimmedName,
+          email: trimmedEmail,
+          role: "Guest",
+          dateRegistered: new Date().toISOString().split("T")[0],
+          status: "Active",
+        });
+        localStorage.setItem("casa_registered_users", JSON.stringify(existingUsers));
+      }
+    } catch (uErr) {
+      // ignore
+    }
+
+    setCreatedBooking(newBookingRecord);
+    setModalStep("success");
+    loadAllBookings(trimmedEmail);
+    await fetchExistingBookings();
+    setIsSubmitting(false);
   }
 
   const handleCancelBookingFromList = (booking) => {

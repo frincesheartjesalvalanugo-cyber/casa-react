@@ -49,7 +49,7 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
   const formattedVat = `\u20B1${vatIncluded.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formattedVatable = `\u20B1${vatableSales.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const receiptNo = booking.receiptNo || `RCP-${booking.id || "BK-000000"}`;
-  const dateIssued = booking.dateCreated
+  const dateIssued = booking.dateCreated && !isNaN(new Date(booking.dateCreated).getTime())
     ? new Date(booking.dateCreated).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })
     : new Date().toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true });
 
