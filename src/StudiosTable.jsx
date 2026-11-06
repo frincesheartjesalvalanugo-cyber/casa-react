@@ -21,6 +21,56 @@ export default function StudiosTable() {
 
   const bookings_url = `${API_URL}/api/bookings`;
 
+  const getAdminHeaders = (user = currentAdminUser) => {
+    const email = user?.email || "admin@casagracias.com";
+    return {
+      "Content-Type": "application/json",
+      "x-admin-email": email,
+      "x-admin-auth": ADMIN_AUTH_SECRET,
+      "Authorization": `Bearer ${ADMIN_AUTH_SECRET}`,
+    };
+  };
+
+  const fetchAdminBookings = async (user) => {
+    setLoadingBookings(true);
+    setErrorMessage("");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(bookings_url, {
+        headers: getAdminHeaders(user),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error("Access denied by backend API (Admin credentials required).");
+        }
+        throw new Error(`Failed to fetch bookings (${response.status})`);
+      }
+
+      const data = await response.json();
+      setBookings(Array.isArray(data) ? data : []);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn("Error fetching admin bookings:", err);
+      setErrorMessage(err.name === "AbortError" ? "Backend connection timed out." : (err.message || "Failed to load bookings from backend."));
+      // Fallback to local storage if remote backend is asleep/offline
+      try {
+        const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
+        if (local.length > 0) {
+          setBookings(local);
+        }
+      } catch {
+        // ignore
+      }
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
   // Enforce Admin Verification before rendering or fetching anything
   useEffect(() => {
     let isMounted = true;
@@ -80,50 +130,6 @@ export default function StudiosTable() {
     };
   }, []);
 
-  const getAdminHeaders = (user = currentAdminUser) => {
-    const email = user?.email || "admin@casagracias.com";
-    return {
-      "Content-Type": "application/json",
-      "x-admin-email": email,
-      "x-admin-auth": ADMIN_AUTH_SECRET,
-      "Authorization": `Bearer ${ADMIN_AUTH_SECRET}`,
-    };
-  };
-
-  const fetchAdminBookings = async (user) => {
-    setLoadingBookings(true);
-    setErrorMessage("");
-    try {
-      const response = await fetch(bookings_url, {
-        headers: getAdminHeaders(user),
-      });
-
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error("Access denied by backend API (Admin credentials required).");
-        }
-        throw new Error(`Failed to fetch bookings (${response.status})`);
-      }
-
-      const data = await response.json();
-      setBookings(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.warn("Error fetching admin bookings:", err);
-      setErrorMessage(err.message || "Failed to load bookings from backend.");
-      // Fallback to local storage if remote backend is asleep/offline
-      try {
-        const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
-        if (local.length > 0) {
-          setBookings(local);
-        }
-      } catch {
-        // ignore
-      }
-    } finally {
-      setLoadingBookings(false);
-    }
-  };
-
   function openEditModal(booking) {
     setisModalOpen(true);
     seteditID(booking.id);
@@ -143,16 +149,23 @@ export default function StudiosTable() {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setBookings((prev) => prev.map((b) => (b.id === editID ? data : b)));
-      } else {
-        // local update fallback
-        setBookings((prev) =>
-          prev.map((b) =>
-            b.id === editID ? { ...b, fullName: editfullName, checkIn: editcheckIn } : b
-          )
+      // server.js returns { message: 'Booking updated successfully' }
+      // Update local state with the edited values
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === editID ? { ...b, fullName: editfullName, checkIn: editcheckIn } : b
+        )
+      );
+
+      // Also persist to localStorage backup
+      try {
+        const local = JSON.parse(localStorage.getItem("casa_bookings") || "[]");
+        const updatedLocal = local.map((b) =>
+          b.id === editID ? { ...b, fullName: editfullName, checkIn: editcheckIn } : b
         );
+        localStorage.setItem("casa_bookings", JSON.stringify(updatedLocal));
+      } catch {
+        // ignore
       }
     } catch (err) {
       console.error("Error updating booking:", err);

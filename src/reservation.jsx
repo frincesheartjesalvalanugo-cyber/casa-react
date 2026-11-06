@@ -81,8 +81,12 @@ function Reservation() {
 
   const fetchExistingBookings = async () => {
     setIsCheckingAvailability(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     try {
-      const res = await fetch(`${API_URL}/api/bookings`);
+      const res = await fetch(`${API_URL}/api/bookings`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -91,6 +95,7 @@ function Reservation() {
         }
       }
     } catch (err) {
+      clearTimeout(timeoutId);
       console.warn("Could not fetch remote bookings:", err);
     } finally {
       setIsCheckingAvailability(false);
@@ -625,10 +630,20 @@ function Reservation() {
             {categories.map((cat) => (
               <div className="col-md-5" key={cat.id}>
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setActiveCategory(cat.id);
                     const catRooms = rooms.filter((r) => r.type === cat.id);
                     handleOpenBookingModal(catRooms[0]);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setActiveCategory(cat.id);
+                      const catRooms = rooms.filter((r) => r.type === cat.id);
+                      handleOpenBookingModal(catRooms[0]);
+                    }
                   }}
                   style={{
                     cursor: "pointer",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBooking }) {
   const [booking, setBooking] = useState(initialBooking);
@@ -6,6 +6,10 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
   const [emailSentToast, setEmailSentToast] = useState(false);
   const [cancelToast, setCancelToast] = useState(false);
   const [contactAdminAlert, setContactAdminAlert] = useState(false);
+
+  useEffect(() => {
+    setBooking(initialBooking);
+  }, [initialBooking]);
 
   if (!isOpen || !booking) return null;
 
@@ -103,6 +107,9 @@ function ReceiptModal({ booking: initialBooking, isOpen, onClose, onCancelBookin
     <div
       className="modal show d-block"
       tabIndex="-1"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
       style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
     >
       <style>{`

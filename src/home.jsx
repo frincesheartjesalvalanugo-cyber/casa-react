@@ -7,6 +7,8 @@ import { getStoredSessionUser, isAuthorizedAdmin } from "./authUtils";
 function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [session, setSession] = useState(null);
+  const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isRoomsDropdownOpen, setIsRoomsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const stored = getStoredSessionUser();
@@ -92,26 +94,48 @@ function Home() {
           <a className="navbar-brand fw-bold fs-4 text-white" href="/" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "1px" }}>
             Casa Gracia's
           </a>
-          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <button
+            className="navbar-toggler"
+            type="button"
+            onClick={() => setIsNavOpen((prev) => !prev)}
+            aria-controls="navbarNav"
+            aria-expanded={isNavOpen}
+            aria-label="Toggle navigation"
+          >
             <span className="navbar-toggler-icon"></span>
           </button>
-          <div className="collapse navbar-collapse" id="navbarNav">
+          <div className={`collapse navbar-collapse ${isNavOpen ? "show" : ""}`} id="navbarNav">
             <ul className="navbar-nav mx-auto mb-2 mb-lg-0">
               <li className="nav-item">
-                <a className="nav-link active fw-bold px-3 text-white" href="/">Home</a>
+                <a className="nav-link active fw-bold px-3 text-white" href="/" onClick={() => setIsNavOpen(false)}>Home</a>
               </li>
               <li className="nav-item">
-                <a className="nav-link px-3" href="#about" style={{ color: "#c8d4bf" }}>About Us</a>
+                <a className="nav-link px-3" href="#about" onClick={() => setIsNavOpen(false)} style={{ color: "#c8d4bf" }}>About Us</a>
               </li>
               <li className="nav-item">
-                <a className="nav-link px-3" href="#reviews" style={{ color: "#c8d4bf" }}>Reviews</a>
+                <a className="nav-link px-3" href="#reviews" onClick={() => setIsNavOpen(false)} style={{ color: "#c8d4bf" }}>Reviews</a>
               </li>
 
               <li className="nav-item dropdown position-static">
-                <a className="nav-link dropdown-toggle px-3" href="#rooms" id="roomsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ color: "#c8d4bf" }}>
+                <a
+                  className="nav-link dropdown-toggle px-3"
+                  href="#rooms"
+                  id="roomsDropdown"
+                  role="button"
+                  aria-expanded={isRoomsDropdownOpen}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsRoomsDropdownOpen((prev) => !prev);
+                  }}
+                  style={{ color: "#c8d4bf" }}
+                >
                   Rooms & Accommodations
                 </a>
-                <div className="dropdown-menu w-100 shadow-lg border-0 p-3 p-md-4 mt-0 rounded-0 rounded-bottom" aria-labelledby="roomsDropdown" style={{ backgroundColor: "#ffffff", borderTop: "3px solid #6b8f5e" }}>
+                <div
+                  className={`dropdown-menu w-100 shadow-lg border-0 p-3 p-md-4 mt-0 rounded-0 rounded-bottom ${isRoomsDropdownOpen ? "show" : ""}`}
+                  aria-labelledby="roomsDropdown"
+                  style={{ backgroundColor: "#ffffff", borderTop: "3px solid #6b8f5e" }}
+                >
                   <div className="container">
                     <div className="row g-4 text-center justify-content-center">
                       <div className="col-12 col-md-6 border-0 border-md-end" style={{ borderColor: "#d8e0c9" }}>
@@ -185,7 +209,7 @@ function Home() {
       </nav>
 
       <header className="hero-section text-white d-flex align-items-center justify-content-center text-center overflow-hidden position-relative" style={{ minHeight: "calc(100vh - 76px)", backgroundImage: "url('/Casa-Gracias-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", padding: "60px 16px" }}>
-        <div className="position-absolute top-0 start-0 w-100 h-100" style={{ background: "rgba(36, 57, 46, 0.6)" }}></div>
+        <div className="position-absolute top-0 start-0 w-100 h-100" style={{ background: "rgba(36, 57, 46, 0.6)", pointerEvents: "none" }}></div>
         <div className="container hero-content position-relative z-1 p-4 p-md-5 rounded-4 shadow-lg text-white" style={{ maxWidth: "780px" }}>
           <h1 className="display-5 display-md-4 fw-bold text-white mb-3" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "1px" }}>Welcome to Casa Gracia's</h1>
           <p className="lead fs-6 fs-md-5 mb-4" style={{ color: "#eef2e6" }}>Experience the perfect blend of local hospitality and tropical elegance.</p>
