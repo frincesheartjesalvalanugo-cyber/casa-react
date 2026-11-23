@@ -116,64 +116,7 @@ function Home() {
                 <a className="nav-link px-3" href="#reviews" onClick={() => setIsNavOpen(false)} style={{ color: "#c8d4bf" }}>Reviews</a>
               </li>
 
-              <li className="nav-item dropdown position-static">
-                <a
-                  className="nav-link dropdown-toggle px-3"
-                  href="#rooms"
-                  id="roomsDropdown"
-                  role="button"
-                  aria-expanded={isRoomsDropdownOpen}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsRoomsDropdownOpen((prev) => !prev);
-                  }}
-                  style={{ color: "#c8d4bf" }}
-                >
-                  
-                </a>
-                <div
-                  className={`dropdown-menu w-100 shadow-lg border-0 p-3 p-md-4 mt-0 rounded-0 rounded-bottom ${isRoomsDropdownOpen ? "show" : ""}`}
-                  aria-labelledby="roomsDropdown"
-                  style={{ backgroundColor: "#ffffff", borderTop: "3px solid #6b8f5e" }}
-                >
-                  <div className="container">
-                    <div className="row g-4 text-center justify-content-center">
-                      <div className="col-12 col-md-6 border-0 border-md-end" style={{ borderColor: "#d8e0c9" }}>
-                        <div className="p-2 p-md-3">
-                          <img src="/villa-1.jpg" alt="Villa Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover", aspectRatio: "16/9" }} />
-                          <h5 className="fw-bold text-uppercase mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Villa Type Room</h5>
-                          <p className="small mb-3" style={{ color: "#7a8a6f" }}>Spacious and air-conditioned rooms designed for family comfort.</p>
-                          <a
-                            className="btn rounded-pill px-4 fw-bold text-white d-inline-flex align-items-center justify-content-center"
-                            href={getBookingUrl("villa")}
-                            onClick={(e) => handleBookClick(e, "villa")}
-                            style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
-                          >
-                            Reserve / View Details
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="col-12 col-md-6">
-                        <div className="p-2 p-md-3">
-                          <img src="/kubo-1.jpg" alt="Kubo Type Room" className="img-fluid rounded-3 mb-3 shadow-sm" style={{ height: "160px", width: "100%", objectFit: "cover", aspectRatio: "16/9" }} />
-                          <h5 className="fw-bold text-uppercase mb-2" style={{ fontFamily: "'Playfair Display', serif", color: "#2f4a3c" }}>Kubo Type Room</h5>
-                          <p className="small mb-3" style={{ color: "#7a8a6f" }}>Cozy tropical experience surrounded by natural breeze.</p>
-                          <a
-                            className="btn rounded-pill px-4 fw-bold text-white d-inline-flex align-items-center justify-content-center"
-                            href={getBookingUrl("kubo")}
-                            onClick={(e) => handleBookClick(e, "kubo")}
-                            style={{ backgroundColor: "#6b8f5e", border: "none", minHeight: "44px" }}
-                          >
-                            Reserve / View Details
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-
+            
               <li className="nav-item">
                 <a className="nav-link px-3" href="#contact" style={{ color: "#c8d4bf" }}>Contact</a>
               </li>
