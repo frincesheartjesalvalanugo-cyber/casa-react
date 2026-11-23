@@ -451,14 +451,45 @@ function AdminDashboard() {
       return sum + numeric;
     }, 0);
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const getBookingDisplayStatus = (b) => {
+    if (!b) return "Pending";
+    if (b.status === "Cancelled") return "Cancelled";
+    if (b.status === "Completed") return "Completed";
+    if (b.status === "Confirmed") {
+      const outDate = b.checkOut || b.checkIn || "";
+      if (outDate && outDate < todayStr) {
+        return "Completed";
+      }
+      return "Confirmed";
+    }
+    return b.status || "Pending";
+  };
+
+  const isVillaBooking = (b) => {
+    return b?.roomId === "villa" || Boolean(b?.roomName && b.roomName.toLowerCase().includes("villa"));
+  };
+
+  const isKuboBooking = (b) => {
+    return b?.roomId === "kubo" || Boolean(b?.roomName && b.roomName.toLowerCase().includes("kubo"));
+  };
+
+  const isRoomOccupied = (b) => {
+    if (!b) return false;
+    if (b.status === "Cancelled" || b.status === "Completed") return false;
+    const outDate = b.checkOut || b.checkIn || "";
+    // If the check-out date is already past, guest has checked out so the room is free!
+    if (outDate && outDate < todayStr) return false;
+    return b.status === "Confirmed" || b.status === "Pending";
+  };
+
   const VILLA_TOTAL = 6;
   const KUBO_TOTAL = 6;
-  const villaOccupied = bookings.filter((b) => b.roomId === "villa" && (b.status === "Confirmed" || b.status === "Pending")).length;
+  const villaOccupied = bookings.filter((b) => isVillaBooking(b) && isRoomOccupied(b)).length;
   const villaAvailable = Math.max(0, VILLA_TOTAL - villaOccupied);
-  const kuboOccupied = bookings.filter((b) => b.roomId === "kubo" && (b.status === "Confirmed" || b.status === "Pending")).length;
+  const kuboOccupied = bookings.filter((b) => isKuboBooking(b) && isRoomOccupied(b)).length;
   const kuboAvailable = Math.max(0, KUBO_TOTAL - kuboOccupied);
-
-  const todayStr = new Date().toISOString().split("T")[0];
   const cancelledBookingsList = bookings.filter((b) => b?.status === "Cancelled");
   const ongoingBookingsList = bookings.filter(
     (b) => b?.status !== "Cancelled" && (b?.checkOut || "") >= todayStr
@@ -532,9 +563,22 @@ function AdminDashboard() {
                           <td data-label="Total" className="fw-bold text-success">{b.totalPrice}</td>
                           {showStatusColumn && (
                             <td data-label="Status">
-                              <span className={`badge rounded-pill px-3 py-2 ${b.status === "Confirmed" ? "bg-success" : "bg-warning text-dark"}`}>
-                                {b.status}
-                              </span>
+                              {(() => {
+                                const disp = getBookingDisplayStatus(b);
+                                const badgeClass =
+                                  disp === "Confirmed"
+                                    ? "bg-success"
+                                    : disp === "Completed"
+                                    ? "bg-secondary"
+                                    : disp === "Pending"
+                                    ? "bg-warning text-dark"
+                                    : "bg-danger";
+                                return (
+                                  <span className={`badge rounded-pill px-3 py-2 ${badgeClass}`}>
+                                    {disp}
+                                  </span>
+                                );
+                              })()}
                             </td>
                           )}
                           <td className="card-action-cell text-center">
@@ -969,9 +1013,22 @@ function AdminDashboard() {
                         <td data-label="Guests" className="fw-semibold">{b.guests}</td>
                         <td data-label="Total" className="fw-bold text-success">{b.totalPrice}</td>
                         <td data-label="Status">
-                          <span className={`badge rounded-pill px-3 py-2 ${b.status === "Confirmed" ? "bg-success" : b.status === "Pending" ? "bg-warning text-dark" : "bg-danger"}`}>
-                            {b.status}
-                          </span>
+                          {(() => {
+                            const disp = getBookingDisplayStatus(b);
+                            const badgeClass =
+                              disp === "Confirmed"
+                                ? "bg-success"
+                                : disp === "Completed"
+                                ? "bg-secondary"
+                                : disp === "Pending"
+                                ? "bg-warning text-dark"
+                                : "bg-danger";
+                            return (
+                              <span className={`badge rounded-pill px-3 py-2 ${badgeClass}`}>
+                                {disp}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="card-action-cell text-center">
                           <div className="d-flex flex-wrap gap-2 w-100" role="group">
@@ -1205,7 +1262,7 @@ function AdminDashboard() {
                       <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱1,000 / person / night</h5>
                     </div>
                     <span className="badge bg-light text-dark p-2 border">
-                      {bookings.filter((b) => b.roomId === "villa" && b.status === "Confirmed").length} Confirmed
+                      {bookings.filter((b) => isVillaBooking(b) && isRoomOccupied(b) && b.status === "Confirmed").length} Active Confirmed
                     </span>
                   </div>
                 </div>
@@ -1251,7 +1308,7 @@ function AdminDashboard() {
                       <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱1,000 / person / night</h5>
                     </div>
                     <span className="badge bg-light text-dark p-2 border">
-                      {bookings.filter((b) => b.roomId === "kubo" && b.status === "Confirmed").length} Confirmed
+                      {bookings.filter((b) => isKuboBooking(b) && isRoomOccupied(b) && b.status === "Confirmed").length} Active Confirmed
                     </span>
                   </div>
                 </div>
