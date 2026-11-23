@@ -129,7 +129,7 @@ function Home() {
                   }}
                   style={{ color: "#c8d4bf" }}
                 >
-                  Rooms & Accommodations
+                  
                 </a>
                 <div
                   className={`dropdown-menu w-100 shadow-lg border-0 p-3 p-md-4 mt-0 rounded-0 rounded-bottom ${isRoomsDropdownOpen ? "show" : ""}`}
