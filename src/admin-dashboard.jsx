@@ -470,20 +470,58 @@ function AdminDashboard() {
     return b?.roomId === "kubo" || Boolean(b?.roomName && b.roomName.toLowerCase().includes("kubo"));
   };
 
-  const isRoomOccupied = (b) => {
+  const getBookingRoomUnit = (b) => {
+    if (b?.roomUnitId) return String(b.roomUnitId);
+    if (b?.unitNumber) {
+      const num = Number(b.unitNumber);
+      if (num >= 101 && num <= 112) return `room-${num}`;
+    }
+    if (b?.roomName) {
+      const match = b.roomName.match(/Room\s*(10[1-9]|11[0-2])/i);
+      if (match) return `room-${match[1]}`;
+    }
+    return null;
+  };
+
+  const isBookingActiveToday = (b) => {
     if (!b) return false;
     if (b.status === "Cancelled" || b.status === "Completed") return false;
-    const outDate = b.checkOut || b.checkIn || "";
-    // If the check-out date is already past, guest has checked out so the room is free!
-    if (outDate && outDate < todayStr) return false;
-    return b.status === "Confirmed" || b.status === "Pending";
+    if (b.status !== "Confirmed" && b.status !== "Pending") return false;
+    const inDate = b.checkIn || "";
+    const outDate = b.checkOut || inDate;
+    if (!inDate) return false;
+    // Active stay today: guest arrives on or before today and checks out today or after today
+    return inDate <= todayStr && outDate >= todayStr;
   };
 
   const VILLA_TOTAL = 6;
   const KUBO_TOTAL = 6;
-  const villaOccupied = bookings.filter((b) => isVillaBooking(b) && isRoomOccupied(b)).length;
+
+  // Count DISTINCT rooms currently occupied today so multiple bookings for the same room don't exceed capacity
+  const occupiedVillaUnits = new Set();
+  const occupiedKuboUnits = new Set();
+  let unassignedVillaCount = 0;
+  let unassignedKuboCount = 0;
+
+  bookings.forEach((b) => {
+    if (!isBookingActiveToday(b)) return;
+    const unit = getBookingRoomUnit(b);
+    if (unit) {
+      const num = parseInt(unit.replace("room-", ""), 10);
+      if (num >= 101 && num <= 106) {
+        occupiedVillaUnits.add(unit);
+      } else if (num >= 107 && num <= 112) {
+        occupiedKuboUnits.add(unit);
+      }
+    } else {
+      if (isVillaBooking(b)) unassignedVillaCount++;
+      else if (isKuboBooking(b)) unassignedKuboCount++;
+    }
+  });
+
+  const villaOccupied = Math.min(VILLA_TOTAL, occupiedVillaUnits.size + unassignedVillaCount);
   const villaAvailable = Math.max(0, VILLA_TOTAL - villaOccupied);
-  const kuboOccupied = bookings.filter((b) => isKuboBooking(b) && isRoomOccupied(b)).length;
+  const kuboOccupied = Math.min(KUBO_TOTAL, occupiedKuboUnits.size + unassignedKuboCount);
   const kuboAvailable = Math.max(0, KUBO_TOTAL - kuboOccupied);
   const cancelledBookingsList = bookings.filter((b) => b?.status === "Cancelled");
   const ongoingBookingsList = bookings.filter(
@@ -1257,7 +1295,7 @@ function AdminDashboard() {
                       <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱1,000 / person / night</h5>
                     </div>
                     <span className="badge bg-light text-dark p-2 border">
-                      {bookings.filter((b) => isVillaBooking(b) && isRoomOccupied(b) && b.status === "Confirmed").length} Active Confirmed
+                      {villaOccupied} / {VILLA_TOTAL} Occupied Today
                     </span>
                   </div>
                 </div>
@@ -1303,7 +1341,7 @@ function AdminDashboard() {
                       <h5 className="fw-bold mb-0" style={{ color: "#2f4a3c" }}>₱1,000 / person / night</h5>
                     </div>
                     <span className="badge bg-light text-dark p-2 border">
-                      {bookings.filter((b) => isKuboBooking(b) && isRoomOccupied(b) && b.status === "Confirmed").length} Active Confirmed
+                      {kuboOccupied} / {KUBO_TOTAL} Occupied Today
                     </span>
                   </div>
                 </div>
