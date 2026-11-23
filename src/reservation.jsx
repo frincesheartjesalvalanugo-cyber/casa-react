@@ -159,18 +159,35 @@ function Reservation() {
 
   const isUnitBooked = (unit, checkInDate = checkIn, checkOutDate = checkOut) => {
     if (!unit) return false;
-    if (!checkInDate || !checkOutDate) return false;
-
-    const newStart = new Date(checkInDate);
-    const newEnd = new Date(checkOutDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newEnd <= newStart) {
-      return false;
-    }
 
     const all = getAllCombinedBookings();
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    let effIn = checkInDate;
+    let effOut = checkOutDate;
+
+    // If checkIn is selected but checkOut is empty, assume at least 1 night for immediate conflict feedback
+    if (effIn && !effOut) {
+      const d = new Date(effIn);
+      d.setDate(d.getDate() + 1);
+      effOut = d.toISOString().split("T")[0];
+    }
+
+    const hasDates = Boolean(effIn && effOut);
+    let newStart = null;
+    let newEnd = null;
+
+    if (hasDates) {
+      newStart = new Date(effIn);
+      newEnd = new Date(effOut);
+      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newEnd <= newStart) {
+        newStart = null;
+        newEnd = null;
+      }
+    }
 
     return all.some((b) => {
-      if (b.status === "Cancelled") return false;
+      if (b.status === "Cancelled" || b.status === "Completed") return false;
 
       const isSameType =
         b.roomId === unit.type ||
@@ -197,13 +214,22 @@ function Reservation() {
       const isSameUnit = matchesUnitNumber || matchesUnitId || matchesUnitName;
       if (!isSameUnit) return false;
 
-      if (!b.checkIn || !b.checkOut) return false;
-      const existStart = new Date(b.checkIn);
-      const existEnd = new Date(b.checkOut);
-      if (isNaN(existStart.getTime()) || isNaN(existEnd.getTime())) return false;
+      // 1. If date range is specified, check date overlap:
+      if (newStart && newEnd) {
+        if (!b.checkIn || !b.checkOut) return false;
+        const existStart = new Date(b.checkIn);
+        const existEnd = new Date(b.checkOut);
+        if (isNaN(existStart.getTime()) || isNaN(existEnd.getTime())) return false;
 
-      // Overlap rule: newCheckIn < existingCheckOut AND newCheckOut > existingCheckIn
-      return newStart < existEnd && newEnd > existStart;
+        // Overlap rule: newCheckIn < existingCheckOut AND newCheckOut > existingCheckIn
+        return newStart < existEnd && newEnd > existStart;
+      }
+
+      // 2. If NO dates entered yet: check if room is currently occupied today or has an active ongoing booking
+      const outDate = b.checkOut || b.checkIn || "";
+      if (outDate && outDate < todayStr) return false; // Past stay already ended
+
+      return b.status === "Confirmed" || b.status === "Pending";
     });
   };
 
@@ -257,6 +283,7 @@ function Reservation() {
   };
 
   useEffect(() => {
+    fetchExistingBookings();
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get("room");
     
@@ -318,21 +345,11 @@ function Reservation() {
       const currentType = selectedRoom?.type || activeCategory || "villa";
       const currentCategoryRooms = rooms.filter((r) => r.type === currentType);
 
-      if (checkIn && checkOut) {
-        const start = new Date(checkIn);
-        const end = new Date(checkOut);
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
-          if (!selectedRoom || isUnitBooked(selectedRoom, checkIn, checkOut)) {
-            const nextFree = currentCategoryRooms.find((u) => !isUnitBooked(u, checkIn, checkOut));
-            setSelectedRoom(nextFree || null);
-          }
-          return;
+      if (!selectedRoom || isUnitBooked(selectedRoom, checkIn, checkOut)) {
+        const nextFree = currentCategoryRooms.find((u) => !isUnitBooked(u, checkIn, checkOut));
+        if (nextFree) {
+          setSelectedRoom(nextFree);
         }
-      }
-
-      if (!selectedRoom) {
-        const firstAvail = currentCategoryRooms.find((u) => !isUnitBooked(u, checkIn, checkOut)) || currentCategoryRooms[0];
-        setSelectedRoom(firstAvail);
       }
     }
   }, [checkIn, checkOut, existingBookings, isBookingModalOpen, activeCategory]);
@@ -813,35 +830,37 @@ function Reservation() {
                                   .filter((r) => r.type === (selectedRoom?.type || activeCategory || "villa"))
                                   .map((unit) => {
                                     const isBooked = isUnitBooked(unit, checkIn, checkOut);
-                                    const isSelected = selectedRoom?.id === unit.id;
+                                    const isSelected = !isBooked && selectedRoom?.id === unit.id;
                                     return (
                                       <button
                                         key={unit.id}
                                         type="button"
                                         disabled={isBooked}
-                                        onClick={() => setSelectedRoom(unit)}
+                                        onClick={() => !isBooked && setSelectedRoom(unit)}
                                         className="btn rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center justify-content-center"
                                         style={{
                                           minHeight: "40px",
-                                          backgroundColor: isSelected
-                                            ? "#2f4a3c"
-                                            : isBooked
+                                          backgroundColor: isBooked
                                             ? "#fdecea"
+                                            : isSelected
+                                            ? "#2f4a3c"
                                             : "#ffffff",
-                                          color: isSelected
-                                            ? "#ffffff"
-                                            : isBooked
+                                          color: isBooked
                                             ? "#c0392b"
+                                            : isSelected
+                                            ? "#ffffff"
                                             : "#2f4a3c",
-                                          border: isSelected
+                                          border: isBooked
+                                            ? "2px solid #c0392b"
+                                            : isSelected
                                             ? "2px solid #2f4a3c"
-                                            : isBooked
-                                            ? "1.5px solid #c0392b"
                                             : "1.5px solid #2f4a3c",
                                           cursor: isBooked ? "not-allowed" : "pointer",
                                           fontSize: "0.88rem",
                                           transition: "all 0.15s ease",
+                                          opacity: isBooked ? 0.85 : 1,
                                         }}
+                                        title={isBooked ? `${unit.name} is already reserved` : `Select ${unit.name}`}
                                       >
                                         <span>{unit.name}</span>
                                         {isBooked && (
@@ -939,6 +958,7 @@ function Reservation() {
                               <input
                                 type="date"
                                 className="form-control"
+                                min={new Date().toISOString().split("T")[0]}
                                 value={checkIn}
                                 onChange={(e) => setCheckIn(e.target.value)}
                                 required
@@ -952,6 +972,7 @@ function Reservation() {
                               <input
                                 type="date"
                                 className="form-control"
+                                min={checkIn || new Date().toISOString().split("T")[0]}
                                 value={checkOut}
                                 onChange={(e) => setCheckOut(e.target.value)}
                                 required

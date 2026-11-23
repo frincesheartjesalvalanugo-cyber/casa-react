@@ -318,13 +318,8 @@ function AdminDashboard() {
   };
 
   const handleDeleteBooking = (bookingId) => {
-    if (window.confirm(`Are you sure you want to remove booking ${bookingId}?`)) {
-      const updated = bookings.filter((b) => b.id !== bookingId);
-      updateBookings(updated);
-      try {
-        deleteDoc(doc(db, "bookings", String(bookingId))).catch(() => {});
-      } catch (_) {}
-      showToast(`Booking ${bookingId} removed.`);
+    if (window.confirm(`Cancel booking ${bookingId}? (The record will stay safely preserved in database & cloud history)`)) {
+      handleUpdateBookingStatus(bookingId, "Cancelled");
     }
   };
 
